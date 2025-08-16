@@ -108,8 +108,20 @@ pdb.gimp_levels_stretch(drawable)
 # OLD (GIMP 2)
 gimp.install_procedure(name, description, help, ...)
 
-# NEW (GIMP 3) - To be updated  
-# Gimp.procedure_new(name, description, help, ...)
+# NEW (GIMP 3) - Modern Gimp.PlugIn and Gimp.ImageProcedure
+class IdPhotoPlugin(Gimp.PlugIn):
+    def do_query_procedures(self):
+        return ["python-select-format-id-photo", "python-settings-id-photo", "python-print-id-photo"]
+    
+    def do_create_procedure(self, name):
+        procedure = Gimp.ImageProcedure.new(self, name, Gimp.PDBProcType.PLUGIN, self.run_function, None)
+        procedure.set_documentation("Description", "Help text", name)
+        procedure.set_menu_label("Menu Item")
+        procedure.add_menu_path("<Image>/На документы/")
+        return procedure
+
+# Plugin startup
+Gimp.main(IdPhotoPlugin, sys.argv)
 ```
 
 ## Original Features

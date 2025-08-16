@@ -69,11 +69,18 @@ def test_plugin_class():
     print("\nTesting plugin class...")
     try:
         import id_photo_for_gimp
-        plugin = id_photo_for_gimp.id_photo_plugin()
         
-        plugin.init()
-        plugin.query()
-        plugin.quit()
+        # Test modern GIMP 3 plugin if available
+        if hasattr(id_photo_for_gimp, 'IdPhotoPlugin'):
+            modern_plugin = id_photo_for_gimp.IdPhotoPlugin()
+            procedures = modern_plugin.do_query_procedures()
+            if procedures:
+                print(f"   - Modern plugin procedures: {procedures}")
+        
+        # Test legacy plugin for compatibility
+        legacy_plugin = id_photo_for_gimp.id_photo_plugin()
+        legacy_plugin.init()
+        legacy_plugin.quit()
         
         print("✅ Plugin class works")
         return True

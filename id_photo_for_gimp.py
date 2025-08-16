@@ -165,7 +165,7 @@ except (ImportError, ValueError):
 try:
     gi.require_version('Gimp', '3.0')
     gi.require_version('GimpUi', '3.0')
-    from gi.repository import Gimp, GimpUi
+    from gi.repository import Gimp, GimpUi, GLib
     GIMP_AVAILABLE = True
 except (ImportError, ValueError):
     print("GIMP 3 API not available - using compatibility layer")
@@ -174,11 +174,17 @@ except (ImportError, ValueError):
     class MockGimp:
         @staticmethod
         def directory(): return '/tmp/gimp-test'
+    class MockGLib:
+        class Error:
+            def __init__(self, msg=""):
+                self.message = msg
     Gimp = MockGimp()
     GimpUi = None
+    GLib = MockGLib()
 
 import os
 import pickle
+import sys
 
 # GIMP 3 compatibility - try to import new API, fallback for testing
 try:
@@ -1853,93 +1859,192 @@ class print_photo(id_photo_base):
 #--------           Вот оно - начало начал          ----#
 #########################################################
 
-# GIMP 3 Plugin System - This will need significant updates for actual GIMP 3
+# GIMP 3 Plugin System - Modern Gimp.PlugIn and Gimp.ImageProcedure implementation
+class IdPhotoPlugin(Gimp.PlugIn if GIMP_AVAILABLE else object):
+    """GIMP 3 compatible plugin using modern Gimp.PlugIn and Gimp.ImageProcedure"""
+    
+    def __init__(self):
+        super().__init__()
+        if GIMP_AVAILABLE:
+            self.set_name("id-photo-plugin")
+            self.set_title("Фото на документы")
+    
+    def do_set_i18n(self, name):
+        """Set up internationalization"""
+        return True
+    
+    def do_query_procedures(self):
+        """Query and register plugin procedures using modern GIMP 3 API"""
+        try:
+            return [
+                "python-select-format-id-photo",
+                "python-settings-id-photo", 
+                "python-print-id-photo"
+            ]
+        except Exception as e:
+            print(f"GIMP 3: do_query_procedures error - {e}")
+            return []
+    
+    def do_create_procedure(self, name):
+        """Create procedures using Gimp.ImageProcedure"""
+        try:
+            if name == "python-select-format-id-photo":
+                procedure = Gimp.ImageProcedure.new(
+                    self, name, Gimp.PDBProcType.PLUGIN,
+                    self.run_select_format, None
+                )
+                procedure.set_image_types("*")
+                procedure.set_sensitivity_mask(
+                    Gimp.ProcedureSensitivityMask.DRAWABLE |
+                    Gimp.ProcedureSensitivityMask.DRAWABLES_ALPHA
+                )
+                procedure.set_documentation(
+                    "Выбор формата фото на документы",
+                    "Выводит диалог со списком форматов для создания фото на документы. "
+                    "Расставьте направляющие и вызовите эту функцию.",
+                    name
+                )
+                procedure.set_menu_label("Выбрать формат...")
+                procedure.set_attribution(
+                    "Карабанов Александр",
+                    "Карабанов Александр (zend.karabanov@gmail.com)",
+                    "2019-2024"
+                )
+                procedure.add_menu_path("<Image>/На документы/")
+                return procedure
+                
+            elif name == "python-settings-id-photo":
+                procedure = Gimp.ImageProcedure.new(
+                    self, name, Gimp.PDBProcType.PLUGIN,
+                    self.run_settings, None
+                )
+                procedure.set_image_types("*")
+                procedure.set_documentation(
+                    "Настройки плагина фото на документы",
+                    "Выводит диалог настроек для добавления и редактирования форматов.",
+                    name
+                )
+                procedure.set_menu_label("Настройки...")
+                procedure.set_attribution(
+                    "Карабанов Александр",
+                    "Карабанов Александр (zend.karabanov@gmail.com)",
+                    "2019-2024"
+                )
+                procedure.add_menu_path("<Image>/На документы/")
+                return procedure
+                
+            elif name == "python-print-id-photo":
+                procedure = Gimp.ImageProcedure.new(
+                    self, name, Gimp.PDBProcType.PLUGIN,
+                    self.run_print_photo, None
+                )
+                procedure.set_image_types("*")
+                procedure.set_sensitivity_mask(
+                    Gimp.ProcedureSensitivityMask.DRAWABLE |
+                    Gimp.ProcedureSensitivityMask.DRAWABLES_ALPHA
+                )
+                procedure.set_documentation(
+                    "Печать фото на документы",
+                    "Выводит диалог для формирования и печати окончательного результата.",
+                    name
+                )
+                procedure.set_menu_label("Печать...")
+                procedure.set_attribution(
+                    "Карабанов Александр",
+                    "Карабанов Александр (zend.karabanov@gmail.com)",
+                    "2019-2024"
+                )
+                procedure.add_menu_path("<Image>/На документы/")
+                return procedure
+                
+        except Exception as e:
+            print(f"GIMP 3: do_create_procedure error for {name} - {e}")
+            
+        return None
+    
+    def run_select_format(self, procedure, run_mode, image, drawables, config, data):
+        """Run select format dialog"""
+        try:
+            if not drawables:
+                return procedure.new_return_values(Gimp.PDBStatusType.EXECUTION_ERROR, 
+                                                  GLib.Error("No drawable selected"))
+            
+            drawable = drawables[0]
+            select_format_id_photo(run_mode, image, drawable)
+            return procedure.new_return_values(Gimp.PDBStatusType.SUCCESS, GLib.Error())
+            
+        except Exception as e:
+            print(f"GIMP 3: run_select_format error - {e}")
+            return procedure.new_return_values(Gimp.PDBStatusType.EXECUTION_ERROR,
+                                              GLib.Error(f"Error in select format: {e}"))
+    
+    def run_settings(self, procedure, run_mode, image, drawables, config, data):
+        """Run settings dialog"""
+        try:
+            settings(run_mode, image)
+            return procedure.new_return_values(Gimp.PDBStatusType.SUCCESS, GLib.Error())
+            
+        except Exception as e:
+            print(f"GIMP 3: run_settings error - {e}")
+            return procedure.new_return_values(Gimp.PDBStatusType.EXECUTION_ERROR,
+                                              GLib.Error(f"Error in settings: {e}"))
+    
+    def run_print_photo(self, procedure, run_mode, image, drawables, config, data):
+        """Run print photo dialog"""
+        try:
+            if not drawables:
+                return procedure.new_return_values(Gimp.PDBStatusType.EXECUTION_ERROR,
+                                                  GLib.Error("No drawable selected"))
+            
+            drawable = drawables[0]
+            print_photo(run_mode, image, drawable)
+            return procedure.new_return_values(Gimp.PDBStatusType.SUCCESS, GLib.Error())
+            
+        except Exception as e:
+            print(f"GIMP 3: run_print_photo error - {e}")
+            return procedure.new_return_values(Gimp.PDBStatusType.EXECUTION_ERROR,
+                                              GLib.Error(f"Error in print photo: {e}"))
+
+
+# Legacy compatibility layer for older GIMP versions
 class id_photo_plugin:
-  """GIMP 3 compatible plugin class - this is a compatibility layer"""
-  
-  def start(self):
-    try:
-        # GIMP 3 - plugin system will be different
-        # gimp.main(self.init, self.quit, self.query, self._run)
-        print("GIMP 3 compatibility: Plugin start - needs updating for GIMP 3 plugin system")
-        self.init()
-    except Exception as e:
-        print(f"GIMP 3 compatibility: Plugin start error - {e}")
+    """Legacy compatibility class - this is a fallback for non-GIMP 3 environments"""
+    
+    def start(self):
+        try:
+            print("Legacy compatibility: Plugin start - using fallback mode")
+            self.init()
+        except Exception as e:
+            print(f"Legacy compatibility: Plugin start error - {e}")
 
-  def init(self):
-    """Initialize plugin"""
-    print("GIMP 3 compatibility: Plugin initialized")
+    def init(self):
+        """Initialize plugin"""
+        print("Legacy compatibility: Plugin initialized")
 
-  def quit(self):
-    """Cleanup on plugin exit"""
-    print("GIMP 3 compatibility: Plugin quit")
+    def quit(self):
+        """Cleanup on plugin exit"""
+        print("Legacy compatibility: Plugin quit")
 
-  def query(self):
-    """Register plugin procedures - GIMP 3 will have different API"""
-    try:
-        authorname = 'Карабанов Александр (zend.karabanov@gmail.com)'
-        copyrightname = 'Карабанов Александр'
-        imgmenupath = '<Image>/На документы/'
-        date = '1 мая 2019 года'
+    def python_select_format_id_photo(self, runmode, image, drawable):
+        """Select format dialog"""
+        try:
+            select_format_id_photo(runmode, image, drawable)
+        except Exception as e:
+            print(f"Legacy compatibility: python_select_format_id_photo error - {e}")
 
-        select_format_id_photo_description = 'Выводит диалог содержащий в себе список форматов.'
-        select_format_id_photo_help = 'Расставьте направляющие и вызовите эту функцию.'
-        select_format_id_photo_params = (
-          (PDB_INT32,    'run_mode', 'Режим запуска'),
-          (PDB_IMAGE,    'image',    'Исходное изображение'),
-          (PDB_DRAWABLE, 'drawable', 'Активный слой')
-       )
-        
-        # GIMP 3 - procedure registration will be different
-        print("GIMP 3 compatibility: Would register python_select_format_id_photo procedure")
-        # gimp.install_procedure(...)  # GIMP 3 - needs updating
+    def python_settings(self, runmode, image):
+        """Settings dialog"""
+        try:
+            settings(runmode, image)
+        except Exception as e:
+            print(f"Legacy compatibility: python_settings error - {e}")
 
-        settings_description = 'Выводит диалог настроек.'
-        settings_help = 'Вызовите эту функцию, чтобы добавить или отредактировать формат.'
-        settings_params = (
-          (PDB_INT32,    'run_mode', 'Режим запуска'),
-          (PDB_IMAGE,    'image',    'Исходное изображение')
-       )
-        
-        print("GIMP 3 compatibility: Would register python_settings procedure")
-        # gimp.install_procedure(...)  # GIMP 3 - needs updating
-
-        print_photo_description = 'Выводит диалог из которого можно с формировать и напечать окончательный результат.'
-        print_photo_help = 'Вызовите эту функцию, чтобы распечатать фото.'
-        print_photo_params = (
-          (PDB_INT32,    'run_mode', 'Режим запуска'),
-          (PDB_IMAGE,    'image',    'Исходное изображение'),
-          (PDB_DRAWABLE, 'drawable', 'Активный слой')
-       )
-        
-        print("GIMP 3 compatibility: Would register python_print_photo procedure")
-        # gimp.install_procedure(...)  # GIMP 3 - needs updating
-        
-    except Exception as e:
-        print(f"GIMP 3 compatibility: Query error - {e}")
-
-  def python_select_format_id_photo(self, runmode, image, drawable):
-    """Select format dialog"""
-    try:
-        select_format_id_photo(runmode, image, drawable)
-    except Exception as e:
-        print(f"GIMP 3 compatibility: python_select_format_id_photo error - {e}")
-
-  def python_settings(self, runmode, image):
-    """Settings dialog"""
-    try:
-        # settings(runmode, image)  # Would need to implement settings class
-        print("GIMP 3 compatibility: Settings dialog needs implementation")
-    except Exception as e:
-        print(f"GIMP 3 compatibility: python_settings error - {e}")
-
-  def python_print_photo(self, runmode, image, drawable):
-    """Print photo dialog"""
-    try:
-        # print_photo(runmode, image, drawable)  # Would need to implement print_photo class
-        print("GIMP 3 compatibility: Print photo dialog needs implementation")
-    except Exception as e:
-        print(f"GIMP 3 compatibility: python_print_photo error - {e}")
+    def python_print_photo(self, runmode, image, drawable):
+        """Print photo dialog"""
+        try:
+            print_photo(runmode, image, drawable)
+        except Exception as e:
+            print(f"Legacy compatibility: python_print_photo error - {e}")
 
 # Test function for standalone execution
 def main():
@@ -1967,8 +2072,19 @@ if __name__ == '__main__':
     # When run standalone, execute test
     main()
 else:
-    # When imported as GIMP plugin, start the plugin
+    # When imported as GIMP plugin, start the appropriate plugin system
     try:
-        id_photo_plugin().start()
+        if GIMP_AVAILABLE:
+            # Use modern GIMP 3 plugin system with Gimp.PlugIn and Gimp.ImageProcedure
+            plugin = IdPhotoPlugin()
+            Gimp.main(IdPhotoPlugin, sys.argv)
+        else:
+            # Fallback to legacy compatibility mode for testing
+            id_photo_plugin().start()
     except Exception as e:
-        print(f"GIMP 3 compatibility: Plugin startup error - {e}")
+        print(f"Plugin startup error - {e}")
+        # Fallback to legacy mode
+        try:
+            id_photo_plugin().start()
+        except Exception as e2:
+            print(f"Legacy plugin startup error - {e2}")
