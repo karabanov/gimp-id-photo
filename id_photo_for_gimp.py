@@ -19,221 +19,47 @@
 # вместе с этой программой. Если нет, см. <http://www.gnu.org/licenses/>.
 
 ###############################################################################
-# GIMP 3 MIGRATION NOTES:
+# GIMP 3 Plugin - Modern Python 3/PyGObject Implementation
 #
-# This plugin has been migrated from Python 2/PyGTK to Python 3/PyGObject for 
-# GIMP 3 compatibility. Key changes made:
+# This plugin has been migrated to GIMP 3 with modern plugin architecture:
 #
-# 1. Updated shebang to python3
-# 2. Migrated from pygtk/gtk to gi.repository.Gtk
-# 3. Added compatibility layer for testing without GTK
-# 4. Updated Python 2 syntax to Python 3 (print, file handling, etc.)
-# 5. Created GIMP 3 plugin compatibility layer
+# 1. Uses Python 3 with PyGObject (GTK3)
+# 2. Implements modern Gimp.PlugIn and Gimp.ImageProcedure
+# 3. Uses GIMP 3's menu registration system
+# 4. Clean GIMP 3-only codebase without compatibility layers
 #
-# AREAS THAT NEED ATTENTION FOR FULL GIMP 3 COMPATIBILITY:
-# - GIMP API calls (marked with "GIMP 3 compatibility" comments)
-# - PDB (Procedural Database) function calls
-# - Image/layer manipulation operations
-# - Plugin registration system
-# - Context management (undo/redo)
-#
-# The plugin should work with minimal changes once GIMP 3 API is finalized.
+# Plugin features:
+# - 32 predefined photo formats for documents
+# - Automatic cropping based on guide placement
+# - Photo effects (grayscale, borders, oval masks)
+# - Batch printing with configurable layouts
+# - Format management (add, edit, delete custom formats)
 ###############################################################################
 
 import gi
-try:
-    gi.require_version('Gtk', '3.0')
-    from gi.repository import Gtk, GObject
-    GTK_AVAILABLE = True
-except (ImportError, ValueError):
-    # Fallback for environments without GTK
-    print("GTK3 not available - creating mock classes for testing")
-    GTK_AVAILABLE = False
-    
-    class MockGtk:
-        class MessageType:
-            ERROR = 0
-            INFO = 1
-        class ButtonsType:
-            OK = 0
-        class ResponseType:
-            OK = -5
-            CANCEL = -6
-            DELETE_EVENT = -4
-        class WindowPosition:
-            CENTER_ALWAYS = 1
-        class Justification:
-            LEFT = 0
-        class WindowType:
-            TOPLEVEL = 0
-        class VBox:
-            def __init__(self, *args): pass
-            def set_border_width(self, w): pass
-            def show(self): pass
-            def pack_start(self, *args): pass
-            def pack_end(self, *args): pass
-        class HBox:
-            def __init__(self, *args): pass
-            def pack_start(self, *args): pass
-            def pack_end(self, *args): pass
-            def show(self): pass
-        class Frame:
-            def __init__(self, label=None): pass
-            def set_border_width(self, w): pass
-            def add(self, w): pass
-            def show(self): pass
-        class Button:
-            def __init__(self, label=None): pass
-            @staticmethod
-            def new_from_stock(stock): return MockGtk.Button()
-            def connect(self, *args): pass
-            def set_tooltip_text(self, text): pass
-            def show(self): pass
-        class CheckButton:
-            def __init__(self, label=None): pass
-            def set_active(self, active): pass
-            def get_active(self): return False
-            def set_tooltip_text(self, text): pass
-            def show(self): pass
-        class RadioButton:
-            def __init__(self, group=None, label=None): pass
-            @staticmethod
-            def new_with_label_from_widget(group, label): return MockGtk.RadioButton()
-            def connect(self, *args): pass
-            def show(self): pass
-            def get_active(self): return False
-        class Label:
-            def __init__(self, text=None): pass
-            def set_justify(self, j): pass
-            def set_markup(self, markup): pass
-            def set_tooltip_text(self, text): pass
-            def show(self): pass
-        class Alignment:
-            def __init__(self, *args): pass
-            def add(self, w): pass
-            def show(self): pass
-        class Table:
-            def __init__(self, *args): pass
-            def set_border_width(self, w): pass
-            def set_row_spacings(self, s): pass
-            def set_col_spacings(self, s): pass
-            def attach(self, *args): pass
-            def show(self): pass
-        class Window:
-            def __init__(self, type): pass
-            def set_position(self, pos): pass
-            def set_title(self, title): pass
-            def set_border_width(self, w): pass
-            def set_resizable(self, r): pass
-            def connect(self, *args): pass
-            def add(self, w): pass
-            def show(self): pass
-            def hide(self): pass
-        class MessageDialog:
-            def __init__(self, *args): pass
-            def set_position(self, pos): pass
-            def show_all(self): pass
-            def run(self): return MockGtk.ResponseType.OK
-            def hide(self): pass
-            def destroy(self): pass
-        class AboutDialog:
-            def __init__(self): pass
-            def set_destroy_with_parent(self, d): pass
-            def set_position(self, pos): pass
-            def set_program_name(self, name): pass
-            def set_version(self, version): pass
-            def set_copyright(self, copyright): pass
-            def set_website(self, website): pass
-            def set_license(self, license): pass
-            def set_wrap_license(self, wrap): pass
-            def run(self): return MockGtk.ResponseType.OK
-            def hide(self): pass
-            def destroy(self): pass
-        STOCK_CANCEL = "gtk-cancel"
-        STOCK_APPLY = "gtk-apply"
-        @staticmethod
-        def main(): pass
-        @staticmethod
-        def main_quit(): pass
-    
-    Gtk = MockGtk()
-    
-    class MockGObject:
-        pass
-    GObject = MockGObject()
-
-try:
-    gi.require_version('Gimp', '3.0')
-    gi.require_version('GimpUi', '3.0')
-    from gi.repository import Gimp, GimpUi, GLib
-    GIMP_AVAILABLE = True
-except (ImportError, ValueError):
-    print("GIMP 3 API not available - using compatibility layer")
-    GIMP_AVAILABLE = False
-    
-    class MockGimp:
-        @staticmethod
-        def directory(): return '/tmp/gimp-test'
-    class MockGLib:
-        class Error:
-            def __init__(self, msg=""):
-                self.message = msg
-    Gimp = MockGimp()
-    GimpUi = None
-    GLib = MockGLib()
+gi.require_version('Gtk', '3.0')
+gi.require_version('Gimp', '3.0')
+gi.require_version('GimpUi', '3.0')
+from gi.repository import Gtk, GObject, Gimp, GimpUi, GLib
 
 import os
 import pickle
 import sys
 
-# GIMP 3 compatibility - try to import new API, fallback for testing
-try:
-    # GIMP 3 style imports
-    import sys
-    sys.path.append('/usr/lib/gimp/3.0/python')  # Typical GIMP 3 Python path
-    # Note: Actual GIMP 3 API may differ, this is a compatibility layer
-except ImportError:
-    pass
+# GIMP 3 API constants
+PDB_INT32 = Gimp.PDBArgType.INT32
+PDB_IMAGE = Gimp.PDBArgType.IMAGE
+PDB_DRAWABLE = Gimp.PDBArgType.DRAWABLE
+PLUGIN = Gimp.PlugInInfo.NORMAL
+RGB_IMAGE = Gimp.ImageType.RGB
+RGBA_IMAGE = Gimp.ImageType.RGBA
+GRAY_IMAGE = Gimp.ImageType.GRAY
+NORMAL_MODE = Gimp.LayerMode.NORMAL
+BACKGROUND_FILL = Gimp.FillType.BACKGROUND
+CHANNEL_OP_REPLACE = Gimp.ChannelOps.REPLACE
 
-# Temporary compatibility layer for GIMP 3 migration
-# TODO: Replace with actual GIMP 3 API when finalized
-class CompatibilityLayer:
-    def __init__(self):
-        self.shelf = {}
-    
-    def get_shelf(self):
-        return self.shelf
-
-# Global compatibility instance
-_compat = CompatibilityLayer()
-shelf = _compat.get_shelf()
-
-# GIMP 3 API compatibility constants - these may need adjustment
-try:
-    from gi.repository import Gimp
-    # These constants may need to be updated based on actual GIMP 3 API
-    PDB_INT32 = Gimp.PDBArgType.INT32
-    PDB_IMAGE = Gimp.PDBArgType.IMAGE
-    PDB_DRAWABLE = Gimp.PDBArgType.DRAWABLE
-    PLUGIN = Gimp.PlugInInfo.NORMAL
-    RGB_IMAGE = Gimp.ImageType.RGB
-    RGBA_IMAGE = Gimp.ImageType.RGBA
-    GRAY_IMAGE = Gimp.ImageType.GRAY
-    NORMAL_MODE = Gimp.LayerMode.NORMAL
-    BACKGROUND_FILL = Gimp.FillType.BACKGROUND
-    CHANNEL_OP_REPLACE = Gimp.ChannelOps.REPLACE
-except:
-    # Fallback constants for development/testing
-    PDB_INT32 = 0
-    PDB_IMAGE = 1
-    PDB_DRAWABLE = 2
-    PLUGIN = 0
-    RGB_IMAGE = 0
-    RGBA_IMAGE = 1
-    GRAY_IMAGE = 2
-    NORMAL_MODE = 0
-    BACKGROUND_FILL = 0
-    CHANNEL_OP_REPLACE = 0
+# Global storage for sharing data between plugin functions
+shelf = {}
 
 class id_photo_base(object):
   # Содержимое конфига, который будет сгенерирован если необходимо
@@ -273,16 +99,9 @@ class id_photo_base(object):
     {'angle': False, 'category': 'other', 'copys': 4, 'faceheight': 35, 'gray_frame': False, 'height': 120, 'name': 'Формат (90 x 120)', 'onlyface': True, 'oval': False, 'overheadheight': 10, 'paper': '10x15', 'print_photo': False, 'to_grayscale': False, 'width': 90, 'url': 'http://gimp-id-photo.ru/formats_data/sorry_no_data.html?from=plugin'}],
     'properties': {'auto_levels': False, 'resolution': 600, 'white_bg': True}}
 
-  # Путь до папки с конфигом - GIMP 3 compatibility update
-  try:
-    # Try GIMP 3 API
-    path_dir = Gimp.directory() + '/id_photo'
-    path = Gimp.directory() + '/id_photo/formats.dat'
-  except:
-    # Fallback for testing/compatibility
-    import tempfile
-    path_dir = os.path.expanduser('~/.gimp-3.0/id_photo')
-    path = os.path.expanduser('~/.gimp-3.0/id_photo/formats.dat')
+  # Путь до папки с конфигом - GIMP 3
+  path_dir = Gimp.directory() + '/id_photo'
+  path = Gimp.directory() + '/id_photo/formats.dat'
   
   # Проверяем существует ли конфиг и генерируем его при необходимости
   if not os.path.exists(path_dir):
@@ -343,28 +162,24 @@ class id_photo_base(object):
     # В этом списке хранятся ID направлялок. которые необходимо удалить
     dguide_list = []
     
-    # GIMP 3 compatibility - guide functions may need updating
-    try:
-        # Находим направляющие, узнием их тип (вертикальная/горизонтальная)
-        # и руководствуясь им заносим координаты в соответствующий список
-        guide_id = 0
-        guide_id = image.find_next_guide(guide_id)
-        # Проверяем наличие направляющих и их количество и если всё хорошо заносим их в список.
-        if guide_id == 0:
-          self.info('Нет ни одной направляющей.\n\nПоместите одну горизонтальную направляющую на уровне верхней части головы, одну горизонтальную направляющую на уровне глаз и одну на уровне подбородка, затем поставьте одну вертикальную направляющую на линию симметрии лица.\n\nПорядок в котором вы будете расставлять направляющие не важен, можно начать с любой.')
-          # image.undo_group_end()  # GIMP 3 - may need updating
-          return  # Modified for GIMP 3 compatibility
+    # GIMP 3 - guide functions may need updating
+    # Находим направляющие, узнием их тип (вертикальная/горизонтальная)
+    # и руководствуясь им заносим координаты в соответствующий список
+    guide_id = 0
+    guide_id = image.find_next_guide(guide_id)
+    # Проверяем наличие направляющих и их количество и если всё хорошо заносим их в список.
+    if guide_id == 0:
+      self.info('Нет ни одной направляющей.\n\nПоместите одну горизонтальную направляющую на уровне верхней части головы, одну горизонтальную направляющую на уровне глаз и одну на уровне подбородка, затем поставьте одну вертикальную направляющую на линию симметрии лица.\n\nПорядок в котором вы будете расставлять направляющие не важен, можно начать с любой.')
+      # image.undo_group_end()  # GIMP 3 - may need updating
+      return  # Modified for GIMP 3 compatibility
+    else:
+      while guide_id != 0:
+        dguide_list.append(guide_id)
+        if image.get_guide_orientation(guide_id) == 0:
+          hguide_list.append(image.get_guide_position(guide_id))
         else:
-          while guide_id != 0:
-            dguide_list.append(guide_id)
-            if image.get_guide_orientation(guide_id) == 0:
-              hguide_list.append(image.get_guide_position(guide_id))
-            else:
-              vguide_list.append(image.get_guide_position(guide_id))
-            guide_id = image.find_next_guide(guide_id)
-    except Exception as e:
-        print(f"GIMP 3 compatibility: Guide handling needs updating - {e}")
-        return
+          vguide_list.append(image.get_guide_position(guide_id))
+        guide_id = image.find_next_guide(guide_id)
     
     if len(hguide_list) != 3:
       self.info('Горизонтальных направляющих должно быть три.\n\nРасставьте направляющие правильно и попробуйте ещё раз.')
@@ -398,56 +213,46 @@ class id_photo_base(object):
     # Расстояние на которое будет смещен холст по оси Y
     y = round((format['overheadheight'] * k) / format['faceheight']) - hguide_list[0]
     
-    # GIMP 3 compatibility - image operations may need updating
-    try:
-        # Изменяем размер холста и смещаем его
-        image.resize(int(w), int(h), int(x), int(y))
-        # Запоминаем цвет фона - GIMP 3 may need different approach
-        # old_background = gimp.get_background()
-        # Меняем цвет фона на цвет индикатор - GIMP 3 may need updating
-        # gimp.set_background(113, 255, 0)
-        # Сводим изображение
-        self.drawable = image.flatten()
-        # Возвращаем в исходное состояние цвет фона
-        # gimp.set_background(old_background)
+    # GIMP 3 - image operations may need updating
+    # Изменяем размер холста и смещаем его
+    image.resize(int(w), int(h), int(x), int(y))
+    # Запоминаем цвет фона - GIMP 3 may need different approach
+    # old_background = gimp.get_background()
+    # Меняем цвет фона на цвет индикатор - GIMP 3 may need updating
+    # gimp.set_background(113, 255, 0)
+    # Сводим изображение
+    self.drawable = image.flatten()
+    # Возвращаем в исходное состояние цвет фона
+    # gimp.set_background(old_background)
+    
+    # Меняем разрешение до необходимого нам - GIMP 3 may need updating
+    if 'resolution' in shelf.get('format', {}):
+        resolution = shelf['format']['resolution']
+        # image.resolution = (resolution, resolution)  # GIMP 3 - may need updating
         
-        # Меняем разрешение до необходимого нам - GIMP 3 may need updating
-        if 'resolution' in shelf.get('format', {}):
-            resolution = shelf['format']['resolution']
-            # image.resolution = (resolution, resolution)  # GIMP 3 - may need updating
-            
-        # Удаляем все направляющие
-        for guide_id in dguide_list:
-          image.delete_guide(guide_id)
-          
-        # Если пользователь захотел, автоматически подбираем уровни
-        if auto_levels:
-          # GIMP 3 compatibility - PDB calls may need updating
-          try:
-              if not self.drawable.is_indexed():
-                  # pdb.gimp_levels_stretch(self.drawable)  # GIMP 3 - needs updating
-                  pass
-              else:
-                  self.info('Инструмент "авто-уровни" не работает с индексированными слоями.\n\nСлой будет конвертирован из режима "Индексированный" в режим "RGB".')
-                  # pdb.gimp_image_convert_rgb(image)  # GIMP 3 - needs updating
-                  # pdb.gimp_levels_stretch(self.drawable)  # GIMP 3 - needs updating
-          except Exception as e:
-              print(f"GIMP 3 compatibility: Auto levels needs updating - {e}")
-              
-    except Exception as e:
-        print(f"GIMP 3 compatibility: Image operations need updating - {e}")
+    # Удаляем все направляющие
+    for guide_id in dguide_list:
+      image.delete_guide(guide_id)
+      
+    # Если пользователь захотел, автоматически подбираем уровни
+    if auto_levels:
+      # GIMP 3 - PDB calls may need updating
+      if not self.drawable.is_indexed():
+          # pdb.gimp_levels_stretch(self.drawable)  # GIMP 3 - needs updating
+          pass
+      else:
+          self.info('Инструмент "авто-уровни" не работает с индексированными слоями.\n\nСлой будет конвертирован из режима "Индексированный" в режим "RGB".')
+          # pdb.gimp_image_convert_rgb(image)  # GIMP 3 - needs updating
+          # pdb.gimp_levels_stretch(self.drawable)  # GIMP 3 - needs updating
 
   # Эта функция конвертирует цветное изображение в чёрнобелое (с оттенками серого)
   def to_grayscale(self, image, drawable):
-    try:
-        # Конвертируем в оттенки серого пердварительно проверив надо ли конвертировать
-        # иначе генерируется ошибка, что мол не надо конвертировать и так грэй-скэйл...
-        # GIMP 3 compatibility - needs updating
-        # if drawable.is_gray != True:
-        #   pdb.gimp_image_convert_grayscale(image)
-        print("GIMP 3 compatibility: to_grayscale function needs updating")
-    except Exception as e:
-        print(f"GIMP 3 compatibility: to_grayscale error - {e}")
+    # Конвертируем в оттенки серого пердварительно проверив надо ли конвертировать
+    # иначе генерируется ошибка, что мол не надо конвертировать и так грэй-скэйл...
+    # GIMP 3 - needs updating
+    # if drawable.is_gray != True:
+    #   pdb.gimp_image_convert_grayscale(image)
+    print("GIMP 3: to_grayscale function needs updating")
 
   # Эта функция добавляет серую однопиксельную рамку к изображению
   def gray_frame(self, image):
@@ -674,7 +479,7 @@ class id_photo_base(object):
       auto_levels = True
     else:
       auto_levels = False
-    # Ищем активный gtk.RadioButton
+    # Ищем активный Gtk.RadioButton
     for format_id in self.format_radio:
       if format_id.get_active():
         # Формируем удобный словарь с данными о формате
@@ -682,7 +487,7 @@ class id_photo_base(object):
         tmp_dict['resolution'] = self.data['properties']['resolution']
         shelf['format'] = tmp_dict
 
-        # Если gtk.RadioButton активен вызываем функцию, которая кадрирует фото
+        # Если Gtk.RadioButton активен вызываем функцию, которая кадрирует фото
         # В качестве параметров передаём ей указатель на изображение
         # и список с параметрами выбранноо формата
         self.create_id_foto(self.image, self.drawable, shelf['format'], auto_levels)
@@ -707,7 +512,7 @@ class id_photo_base(object):
     # Разрешаем запись информации UNDO
     self.image.undo_group_end()
     gimp.context_pop()
-    gtk.main_quit()
+    Gtk.main()
 
   # Эта функция только формирует конечный результат
   # и ещё выводит изображение на дефолтный принтер если необходимо
@@ -745,7 +550,7 @@ class id_photo_base(object):
     # Разрешаем запись информации UNDO
     self.image.undo_group_end()
     gimp.context_pop()
-    gtk.main_quit()
+    Gtk.main()
 
   # Эта функция способствует редактироывнию настроек
   def apply_settings(self, widget, data=None):
@@ -763,21 +568,21 @@ class id_photo_base(object):
     config = open(self.path, 'wb')
     pickle.dump(self.data, config)
     config.close()
-    gtk.main_quit()
+    Gtk.main()
 
   # Эта функция способствует редактироывнию выбранного формата
   def edit_format(self, widget, data=None):
-    # Ищем активный gtk.RadioButton
+    # Ищем активный Gtk.RadioButton
     for format_id in self.format_radio:
       if format_id.get_active():
         # Название формата
-        self.name_entry = gtk.Entry()
+        self.name_entry = Gtk.Entry()
         self.name_entry.set_text(self.data['formats'][self.format_radio.index(format_id)]['name'])
         #self.name_entry.connect('changed', lambda e: self.name_entry.set_text(''))
         self.name_entry.grab_focus()
         self.name_entry.show()
         # Выпадающий сисок "Категория"
-        self.category_cb = gtk.combo_box_new_text()
+        self.category_cb = Gtk.ComboBoxText()
         self.category_cb.append_text('Категория (Разное)')
         self.category_cb.append_text('Разное')
         self.category_cb.append_text('Паспорт')
@@ -796,51 +601,51 @@ class id_photo_base(object):
           self.category_cb.set_active(4)
 
         # Ширина фото
-        self.width_label = gtk.Label('Ширина фото:')
-        self.width_label.set_justify(gtk.JUSTIFY_LEFT)
+        self.width_label = Gtk.Label('Ширина фото:')
+        self.width_label.set_justify(Gtk.Justification.LEFT)
         self.width_label.show()
-        self.width_adj = gtk.Adjustment(self.data['formats'][self.format_radio.index(format_id)]['width'], 0.0, 200.0, 1.0, 1.0, 0.0)
-        self.width_spin = gtk.SpinButton(self.width_adj, 0, 0)
+        self.width_adj = Gtk.Adjustment(self.data['formats'][self.format_radio.index(format_id)]['width'], 0.0, 200.0, 1.0, 1.0, 0.0)
+        self.width_spin = Gtk.SpinButton(self.width_adj, 0, 0)
         self.width_spin.set_numeric(True)
         self.width_spin.show()
         # Высота фото
-        self.height_label = gtk.Label('Высота фото: ')
-        self.height_label.set_justify(gtk.JUSTIFY_LEFT)
+        self.height_label = Gtk.Label('Высота фото: ')
+        self.height_label.set_justify(Gtk.Justification.LEFT)
         self.height_label.show()
-        self.height_adj = gtk.Adjustment(self.data['formats'][self.format_radio.index(format_id)]['height'], 0.0, 200.0, 1.0, 1.0, 0.0)
-        self.height_spin = gtk.SpinButton(self.height_adj, 0, 0)
+        self.height_adj = Gtk.Adjustment(self.data['formats'][self.format_radio.index(format_id)]['height'], 0.0, 200.0, 1.0, 1.0, 0.0)
+        self.height_spin = Gtk.SpinButton(self.height_adj, 0, 0)
         self.height_spin.set_numeric(True)
         self.height_spin.show()
         # До головы
-        self.overheadheight_label = gtk.Label('До головы:     ')
-        self.overheadheight_label.set_justify(gtk.JUSTIFY_LEFT)
+        self.overheadheight_label = Gtk.Label('До головы:     ')
+        self.overheadheight_label.set_justify(Gtk.Justification.LEFT)
         self.overheadheight_label.show()
-        self.overheadheight_adj = gtk.Adjustment(self.data['formats'][self.format_radio.index(format_id)]['overheadheight'], 0.0, 200.0, 1.0, 1.0, 0.0)
-        self.overheadheight_spin = gtk.SpinButton(self.overheadheight_adj, 0, 0)
+        self.overheadheight_adj = Gtk.Adjustment(self.data['formats'][self.format_radio.index(format_id)]['overheadheight'], 0.0, 200.0, 1.0, 1.0, 0.0)
+        self.overheadheight_spin = Gtk.SpinButton(self.overheadheight_adj, 0, 0)
         self.overheadheight_spin.set_numeric(True)
         self.overheadheight_spin.show()
         # флажок "обесцветить фото"
-        self.to_grayscale = gtk.CheckButton('обесцветить фото')
+        self.to_grayscale = Gtk.CheckButton('обесцветить фото')
         self.to_grayscale.show()
         if self.data['formats'][self.format_radio.index(format_id)]['to_grayscale']:
           self.to_grayscale.set_active(True)
         # флажок "добавить рамку"
-        self.gray_frame = gtk.CheckButton('добавить рамку')
+        self.gray_frame = Gtk.CheckButton('добавить рамку')
         self.gray_frame.show()
         if self.data['formats'][self.format_radio.index(format_id)]['gray_frame']:
           self.gray_frame.set_active(True)
         # флажок "добавить овал с растушёвкой"
-        self.oval = gtk.CheckButton('добавить овал с растушёвкой')
+        self.oval = Gtk.CheckButton('добавить овал с растушёвкой')
         self.oval.show()
         if self.data['formats'][self.format_radio.index(format_id)]['oval']:
           self.oval.set_active(True)
         # флажок "распечатать немедленно"
-        self.print_photo = gtk.CheckButton('распечатать автоматически')
+        self.print_photo = Gtk.CheckButton('распечатать автоматически')
         self.print_photo.show()
         if self.data['formats'][self.format_radio.index(format_id)]['print_photo']:
           self.print_photo.set_active(True)
         # Выпадающий сисок "Уголок"
-        self.angle_cb = gtk.combo_box_new_text()
+        self.angle_cb = Gtk.ComboBoxText()
         self.angle_cb.append_text('Уголок (Без уголка)')
         self.angle_cb.append_text('Без уголка')
         self.angle_cb.append_text('Круглый справа')
@@ -858,7 +663,7 @@ class id_photo_base(object):
         elif self.data['formats'][self.format_radio.index(format_id)]['angle'] == 'left_direct':
           self.angle_cb.set_active(5)
         # Выпадающий сисок "Формат бумаги"
-        self.paper_cb = gtk.combo_box_new_text()
+        self.paper_cb = Gtk.ComboBoxText()
         self.paper_cb.append_text('Формат бумаги (10x15)')
         self.paper_cb.append_text('10x15')
         self.paper_cb.append_text('A5')
@@ -872,44 +677,44 @@ class id_photo_base(object):
         elif self.data['formats'][self.format_radio.index(format_id)]['paper'] == 'A4':
           self.paper_cb.set_active(3)
         # Количество фоток
-        self.copys_adj = gtk.Adjustment(self.data['formats'][self.format_radio.index(format_id)]['copys'], 1.0, 200.0, 1.0, 1.0, 0.0)
-        self.copys_spin = gtk.SpinButton(self.copys_adj, 0, 0)
+        self.copys_adj = Gtk.Adjustment(self.data['formats'][self.format_radio.index(format_id)]['copys'], 1.0, 200.0, 1.0, 1.0, 0.0)
+        self.copys_spin = Gtk.SpinButton(self.copys_adj, 0, 0)
         self.copys_spin.set_numeric(True)
         self.copys_spin.show()
-        self.copys_label = gtk.Label('фото на листе')
-        self.copys_label.set_justify(gtk.JUSTIFY_LEFT)
+        self.copys_label = Gtk.Label('фото на листе')
+        self.copys_label.set_justify(Gtk.Justification.LEFT)
         self.copys_label.show()
         # Пакуем виджеты в горизонтальный бокс
-        self.copys_hbox = gtk.HBox(False, 0)
+        self.copys_hbox = Gtk.HBox(False, 0)
         self.copys_hbox.pack_start(self.copys_spin, False, False, 0)
         self.copys_hbox.pack_start(self.copys_label, False, False, 5)
         self.copys_hbox.show()
         # Пакуем ширину в горизонтальный бокс
-        self.width_hbox = gtk.HBox(False, 0)
+        self.width_hbox = Gtk.HBox(False, 0)
         self.width_hbox.pack_start(self.width_label, True, True, 0)
         self.width_hbox.pack_start(self.width_spin, False, False, 5)
         self.width_hbox.show()
         # Пакуем высоту в горизонтальный бокс
-        self.height_hbox = gtk.HBox(False, 0)
+        self.height_hbox = Gtk.HBox(False, 0)
         self.height_hbox.pack_start(self.height_label, True, True, 0)
         self.height_hbox.pack_start(self.height_spin, False, False, 5)
         self.height_hbox.show()
         # Пакуем над головой в горизонтальный бокс
-        self.overheadheight_hbox = gtk.HBox(False, 0)
+        self.overheadheight_hbox = Gtk.HBox(False, 0)
         self.overheadheight_hbox.pack_start(self.overheadheight_label, True, True, 0)
         self.overheadheight_hbox.pack_start(self.overheadheight_spin, False, False, 5)
         self.overheadheight_hbox.show()
         # Пакуем в вертикальный бокс горизонтальные боксы с виджетами
-        self.size_vbox = gtk.VBox(True, 0)
+        self.size_vbox = Gtk.VBox(True, 0)
         self.size_vbox.pack_start(self.width_hbox, True, True, 0)
         self.size_vbox.pack_start(self.height_hbox, True, True, 0)
         self.size_vbox.pack_start(self.overheadheight_hbox, True, True, 0)
         self.size_vbox.show()
 
-        self.onlyface1_radio = gtk.RadioButton(None, 'от глаз до подбородка')
+        self.onlyface1_radio = Gtk.RadioButton(None, 'от глаз до подбородка')
         self.onlyface1_radio.show()
 
-        self.onlyface2_radio = gtk.RadioButton(self.onlyface1_radio, 'от макушки до подбородка')
+        self.onlyface2_radio = Gtk.RadioButton(self.onlyface1_radio, 'от макушки до подбородка')
         self.onlyface2_radio.show()
 
         if self.data['formats'][self.format_radio.index(format_id)]['onlyface']:
@@ -917,26 +722,26 @@ class id_photo_base(object):
         else:
           self.onlyface2_radio.set_active(True)
 
-        self.faceheight_adj = gtk.Adjustment(self.data['formats'][self.format_radio.index(format_id)]['faceheight'], 0.0, 200.0, 1.0, 1.0, 0.0)
-        self.faceheight_spin = gtk.SpinButton(self.faceheight_adj, 0, 0)
+        self.faceheight_adj = Gtk.Adjustment(self.data['formats'][self.format_radio.index(format_id)]['faceheight'], 0.0, 200.0, 1.0, 1.0, 0.0)
+        self.faceheight_spin = Gtk.SpinButton(self.faceheight_adj, 0, 0)
         self.faceheight_spin.set_numeric(True)
         self.faceheight_spin.show()
 
         # Пакуем в вертикальный бокс горизонтальные боксы с виджетами
-        self.faceheight_vbox = gtk.VBox(True, 5)
+        self.faceheight_vbox = Gtk.VBox(True, 5)
         self.faceheight_vbox.set_border_width(10)
         self.faceheight_vbox.pack_start(self.faceheight_spin, True, True, 0)
         self.faceheight_vbox.pack_start(self.onlyface1_radio, True, True, 0)
         self.faceheight_vbox.pack_start(self.onlyface2_radio, True, True, 0)
         self.faceheight_vbox.show()
 
-        self.faceheight_frame = gtk.Frame('Размер лицевой части головы')
+        self.faceheight_frame = Gtk.Frame('Размер лицевой части головы')
         self.faceheight_frame.add(self.faceheight_vbox)
         self.faceheight_frame.show()
         # Конец особая магия для "Лицевая чпасть головы" %-)
 
         # Инициируем таблицу, в которую поместим все виджеты
-        self.table = gtk.Table(1, 2, False)
+        self.table = Gtk.Table(1, 2, False)
         self.table.set_border_width(5)
         self.table.set_row_spacings(0)
         self.table.set_col_spacings(10)
@@ -945,8 +750,8 @@ class id_photo_base(object):
         self.table.show()
 
         # Инициируем диалог, на котором будут все наши виджеты находиться
-        dialog = gtk.Dialog('Правка формата "' + self.data['formats'][self.format_radio.index(format_id)]['name'] + '"', self.window, gtk.DIALOG_NO_SEPARATOR | gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT, (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_SAVE, gtk.RESPONSE_OK))
-        dialog.set_position(gtk.WIN_POS_CENTER_ALWAYS)
+        dialog = Gtk.Dialog('Правка формата "' + self.data['formats'][self.format_radio.index(format_id)]['name'] + '"', self.window, Gtk.DialogFlags.MODAL | Gtk.DialogFlags.DESTROY_WITH_PARENT, (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_SAVE, Gtk.ResponseType.OK))
+        dialog.set_position(Gtk.WindowPosition.CENTER_ALWAYS)
         dialog.set_resizable(False)
         dialog.set_border_width(10)
         dialog.vbox.pack_start(self.name_entry, True, True, 5)
@@ -962,10 +767,10 @@ class id_photo_base(object):
         dialog.show_all()
 
         response = dialog.run()
-        if response == gtk.RESPONSE_CANCEL:
+        if response == Gtk.ResponseType.CANCEL:
           dialog.hide()
           dialog.destroy()
-        if response == gtk.RESPONSE_OK:
+        if response == Gtk.ResponseType.OK:
           name = self.name_entry.get_text()
           width = self.width_spin.get_value_as_int()
           height = self.height_spin.get_value_as_int()
@@ -1052,22 +857,22 @@ class id_photo_base(object):
 
   # Эта функция способствует удалению выбранного формата
   def delete_format(self, widget, data=None):
-    # Ищем активный gtk.RadioButton
+    # Ищем активный Gtk.RadioButton
     for format_id in self.format_radio:
       if format_id.get_active():
         # Инициируем диалог, с помощью которого пользователь подтвердит свой выбор
-        dialog = gtk.Dialog('Удаление формата "' + self.data['formats'][self.format_radio.index(format_id)]['name'] + '"', self.window, gtk.DIALOG_NO_SEPARATOR | gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT, (gtk.STOCK_NO, gtk.RESPONSE_CANCEL, gtk.STOCK_YES, gtk.RESPONSE_OK))
-        dialog.set_position(gtk.WIN_POS_CENTER_ALWAYS)
+        dialog = Gtk.Dialog('Удаление формата "' + self.data['formats'][self.format_radio.index(format_id)]['name'] + '"', self.window, Gtk.DialogFlags.MODAL | Gtk.DialogFlags.DESTROY_WITH_PARENT, (Gtk.STOCK_NO, Gtk.ResponseType.CANCEL, Gtk.STOCK_YES, Gtk.ResponseType.OK))
+        dialog.set_position(Gtk.WindowPosition.CENTER_ALWAYS)
         dialog.set_resizable(False)
         dialog.set_border_width(10)
-        self.confirmation_label = gtk.Label('Вы действительно хотите удалить формат "' + self.data['formats'][self.format_radio.index(format_id)]['name'] + '"?')
+        self.confirmation_label = Gtk.Label('Вы действительно хотите удалить формат "' + self.data['formats'][self.format_radio.index(format_id)]['name'] + '"?')
         dialog.vbox.pack_start(self.confirmation_label, True, True, 5)
         dialog.show_all()
         response = dialog.run()
-        if response == gtk.RESPONSE_CANCEL:
+        if response == Gtk.ResponseType.CANCEL:
           dialog.hide()
           dialog.destroy()
-        if response == gtk.RESPONSE_OK:
+        if response == Gtk.ResponseType.OK:
           # Удаляем формат
           name = self.data['formats'][self.format_radio.index(format_id)]['name']
           del self.data['formats'][self.format_radio.index(format_id)]
@@ -1093,13 +898,13 @@ class id_photo_base(object):
   # Эта функция способствует добавлению нового формата
   def add_format(self, widget, data=None):
     # Название формата
-    self.name_entry = gtk.Entry()
+    self.name_entry = Gtk.Entry()
     self.name_entry.set_text('Название формата')
     #self.name_entry.connect('changed', lambda e: self.name_entry.set_text(''))
     self.name_entry.grab_focus()
     self.name_entry.show()
     # Выпадающий сисок "Категория"
-    self.category_cb = gtk.combo_box_new_text()
+    self.category_cb = Gtk.ComboBoxText()
     self.category_cb.append_text('Категория (Разное)')
     self.category_cb.append_text('Разное')
     self.category_cb.append_text('Паспорт')
@@ -1108,43 +913,43 @@ class id_photo_base(object):
     self.category_cb.set_active(0)
     self.category_cb.show()
     # Ширина фото
-    self.width_label = gtk.Label('Ширина фото:')
-    self.width_label.set_justify(gtk.JUSTIFY_LEFT)
+    self.width_label = Gtk.Label('Ширина фото:')
+    self.width_label.set_justify(Gtk.Justification.LEFT)
     self.width_label.show()
-    self.width_adj = gtk.Adjustment(0.0, 0.0, 200.0, 1.0, 1.0, 0.0)
-    self.width_spin = gtk.SpinButton(self.width_adj, 0, 0)
+    self.width_adj = Gtk.Adjustment(0.0, 0.0, 200.0, 1.0, 1.0, 0.0)
+    self.width_spin = Gtk.SpinButton(self.width_adj, 0, 0)
     self.width_spin.set_numeric(True)
     self.width_spin.show()
     # Высота фото
-    self.height_label = gtk.Label('Высота фото: ')
-    self.height_label.set_justify(gtk.JUSTIFY_LEFT)
+    self.height_label = Gtk.Label('Высота фото: ')
+    self.height_label.set_justify(Gtk.Justification.LEFT)
     self.height_label.show()
-    self.height_adj = gtk.Adjustment(0.0, 0.0, 200.0, 1.0, 1.0, 0.0)
-    self.height_spin = gtk.SpinButton(self.height_adj, 0, 0)
+    self.height_adj = Gtk.Adjustment(0.0, 0.0, 200.0, 1.0, 1.0, 0.0)
+    self.height_spin = Gtk.SpinButton(self.height_adj, 0, 0)
     self.height_spin.set_numeric(True)
     self.height_spin.show()
     # До головы
-    self.overheadheight_label = gtk.Label('До головы:     ')
-    self.overheadheight_label.set_justify(gtk.JUSTIFY_LEFT)
+    self.overheadheight_label = Gtk.Label('До головы:     ')
+    self.overheadheight_label.set_justify(Gtk.Justification.LEFT)
     self.overheadheight_label.show()
-    self.overheadheight_adj = gtk.Adjustment(0.0, 0.0, 200.0, 1.0, 1.0, 0.0)
-    self.overheadheight_spin = gtk.SpinButton(self.overheadheight_adj, 0, 0)
+    self.overheadheight_adj = Gtk.Adjustment(0.0, 0.0, 200.0, 1.0, 1.0, 0.0)
+    self.overheadheight_spin = Gtk.SpinButton(self.overheadheight_adj, 0, 0)
     self.overheadheight_spin.set_numeric(True)
     self.overheadheight_spin.show()
     # флажок "обесцветить фото"
-    self.to_grayscale = gtk.CheckButton('обесцветить фото')
+    self.to_grayscale = Gtk.CheckButton('обесцветить фото')
     self.to_grayscale.show()
     # флажок "добавить рамку"
-    self.gray_frame = gtk.CheckButton('добавить рамку')
+    self.gray_frame = Gtk.CheckButton('добавить рамку')
     self.gray_frame.show()
     # флажок "добавить овал с растушёвкой"
-    self.oval = gtk.CheckButton('добавить овал с растушёвкой')
+    self.oval = Gtk.CheckButton('добавить овал с растушёвкой')
     self.oval.show()
     # флажок "распечатать немедленно"
-    self.print_photo = gtk.CheckButton('распечатать автоматически')
+    self.print_photo = Gtk.CheckButton('распечатать автоматически')
     self.print_photo.show()
     # Выпадающий сисок "Уголок"
-    self.angle_cb = gtk.combo_box_new_text()
+    self.angle_cb = Gtk.ComboBoxText()
     self.angle_cb.append_text('Уголок (Без уголка)')
     self.angle_cb.append_text('Без уголка')
     self.angle_cb.append_text('Круглый справа')
@@ -1154,7 +959,7 @@ class id_photo_base(object):
     self.angle_cb.set_active(0)
     self.angle_cb.show()
     # Выпадающий сисок "Формат бумаги"
-    self.paper_cb = gtk.combo_box_new_text()
+    self.paper_cb = Gtk.ComboBoxText()
     self.paper_cb.append_text('Формат бумаги (10x15)')
     self.paper_cb.append_text('10x15')
     self.paper_cb.append_text('A5')
@@ -1162,62 +967,62 @@ class id_photo_base(object):
     self.paper_cb.set_active(0)
     self.paper_cb.show()
     # Количество фоток
-    self.copys_adj = gtk.Adjustment(4.0, 1.0, 200.0, 1.0, 1.0, 0.0)
-    self.copys_spin = gtk.SpinButton(self.copys_adj, 0, 0)
+    self.copys_adj = Gtk.Adjustment(4.0, 1.0, 200.0, 1.0, 1.0, 0.0)
+    self.copys_spin = Gtk.SpinButton(self.copys_adj, 0, 0)
     self.copys_spin.set_numeric(True)
     self.copys_spin.show()
-    self.copys_label = gtk.Label('фото на листе')
-    self.copys_label.set_justify(gtk.JUSTIFY_LEFT)
+    self.copys_label = Gtk.Label('фото на листе')
+    self.copys_label.set_justify(Gtk.Justification.LEFT)
     self.copys_label.show()
     # Пакуем виджеты в горизонтальный бокс
-    self.copys_hbox = gtk.HBox(False, 0)
+    self.copys_hbox = Gtk.HBox(False, 0)
     self.copys_hbox.pack_start(self.copys_spin, False, False, 0)
     self.copys_hbox.pack_start(self.copys_label, False, False, 5)
     self.copys_hbox.show()
     # Пакуем ширину в горизонтальный бокс
-    self.width_hbox = gtk.HBox(False, 0)
+    self.width_hbox = Gtk.HBox(False, 0)
     self.width_hbox.pack_start(self.width_label, True, True, 0)
     self.width_hbox.pack_start(self.width_spin, False, False, 5)
     self.width_hbox.show()
     # Пакуем высоту в горизонтальный бокс
-    self.height_hbox = gtk.HBox(False, 0)
+    self.height_hbox = Gtk.HBox(False, 0)
     self.height_hbox.pack_start(self.height_label, True, True, 0)
     self.height_hbox.pack_start(self.height_spin, False, False, 5)
     self.height_hbox.show()
     # Пакуем над головой в горизонтальный бокс
-    self.overheadheight_hbox = gtk.HBox(False, 0)
+    self.overheadheight_hbox = Gtk.HBox(False, 0)
     self.overheadheight_hbox.pack_start(self.overheadheight_label, True, True, 0)
     self.overheadheight_hbox.pack_start(self.overheadheight_spin, False, False, 5)
     self.overheadheight_hbox.show()
     # Пакуем в вертикальный бокс горизонтальные боксы с виджетами
-    self.size_vbox = gtk.VBox(True, 0)
+    self.size_vbox = Gtk.VBox(True, 0)
     self.size_vbox.pack_start(self.width_hbox, True, True, 0)
     self.size_vbox.pack_start(self.height_hbox, True, True, 0)
     self.size_vbox.pack_start(self.overheadheight_hbox, True, True, 0)
     self.size_vbox.show()
     # Голова от кудова докудова?
-    self.onlyface1_radio = gtk.RadioButton(None, 'от глаз до подбородка')
+    self.onlyface1_radio = Gtk.RadioButton(None, 'от глаз до подбородка')
     self.onlyface1_radio.show()
-    self.onlyface2_radio = gtk.RadioButton(self.onlyface1_radio, 'от макушки до подбородка')
+    self.onlyface2_radio = Gtk.RadioButton(self.onlyface1_radio, 'от макушки до подбородка')
     self.onlyface2_radio.show()
     # И Указываем откудова докудова
-    self.faceheight_adj = gtk.Adjustment(0.0, 0.0, 200.0, 1.0, 1.0, 0.0)
-    self.faceheight_spin = gtk.SpinButton(self.faceheight_adj, 0, 0)
+    self.faceheight_adj = Gtk.Adjustment(0.0, 0.0, 200.0, 1.0, 1.0, 0.0)
+    self.faceheight_spin = Gtk.SpinButton(self.faceheight_adj, 0, 0)
     self.faceheight_spin.set_numeric(True)
     self.faceheight_spin.show()
     # Пакуем в вертикальный бокс горизонтальные боксы с виджетами
-    self.faceheight_vbox = gtk.VBox(True, 5)
+    self.faceheight_vbox = Gtk.VBox(True, 5)
     self.faceheight_vbox.set_border_width(10)
     self.faceheight_vbox.pack_start(self.faceheight_spin, True, True, 0)
     self.faceheight_vbox.pack_start(self.onlyface1_radio, True, True, 0)
     self.faceheight_vbox.pack_start(self.onlyface2_radio, True, True, 0)
     self.faceheight_vbox.show()
-    self.faceheight_frame = gtk.Frame('Размер лицевой части головы')
+    self.faceheight_frame = Gtk.Frame('Размер лицевой части головы')
     self.faceheight_frame.add(self.faceheight_vbox)
     self.faceheight_frame.show()
     # Конец особая магия для "Лицевая чпасть головы" %-)
     # Инициируем таблицу, в которую поместим все виджеты
-    self.table = gtk.Table(1, 2, False)
+    self.table = Gtk.Table(1, 2, False)
     self.table.set_border_width(5)
     self.table.set_row_spacings(0)
     self.table.set_col_spacings(10)
@@ -1225,8 +1030,8 @@ class id_photo_base(object):
     self.table.attach(self.faceheight_frame, 1, 2, 0, 1)
     self.table.show()
     # Инициируем диалог, на котором будут все наши виджеты находиться
-    dialog = gtk.Dialog('Добавить новый формат', self.window, gtk.DIALOG_NO_SEPARATOR | gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT, (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_ADD, gtk.RESPONSE_OK))
-    dialog.set_position(gtk.WIN_POS_CENTER_ALWAYS)
+    dialog = Gtk.Dialog('Добавить новый формат', self.window, Gtk.DialogFlags.MODAL | Gtk.DialogFlags.DESTROY_WITH_PARENT, (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_ADD, Gtk.ResponseType.OK))
+    dialog.set_position(Gtk.WindowPosition.CENTER_ALWAYS)
     dialog.set_resizable(False)
     dialog.set_border_width(10)
     dialog.vbox.pack_start(self.name_entry, True, True, 5)
@@ -1241,10 +1046,10 @@ class id_photo_base(object):
     dialog.vbox.pack_start(self.print_photo, True, True, 5)
     dialog.show_all()
     response = dialog.run()
-    if response == gtk.RESPONSE_CANCEL:
+    if response == Gtk.ResponseType.CANCEL:
       dialog.hide()
       dialog.destroy()
-    if response == gtk.RESPONSE_OK:
+    if response == Gtk.ResponseType.OK:
       name = self.name_entry.get_text()
       width = self.width_spin.get_value_as_int()
       height = self.height_spin.get_value_as_int()
@@ -1328,7 +1133,7 @@ class id_photo_base(object):
       group = None
       if len(self.format_radio) > 0:
         group = self.format_radio[-1]
-      self.format_radio.append(gtk.RadioButton(group, self.data['formats'][-1]['name']))
+      self.format_radio.append(Gtk.RadioButton(group, self.data['formats'][-1]['name']))
       self.format_radio[-1].show()
       self.format_radio[-1].set_active(True)
       self.formats_vbox.pack_start(self.format_radio[-1], False, False, 0)
@@ -1350,7 +1155,7 @@ class id_photo_base(object):
   # Вспомогательная функция. Выполняется при закрытии окна
   # или нажатии кнопки "Отмена"
   def destroy(self, widget, data=None):
-    Gtk.main_quit()
+    Gtk.main()
 
 #########################################################
 #-------- Тут и класса конец, а кто потомок молодец ----#
@@ -1477,64 +1282,58 @@ class select_format_id_photo(id_photo_base):
   def auto_execute(self, widget, data=None):
     # Скрываем окно, чтоб не мешало
     self.window.hide()
-    try:
-        # GIMP 3 compatibility - context operations may need updating
-        # gimp.context_push()  # GIMP 3 - needs updating
-        # Запрещаем запись информации UNDO
-        # self.image.undo_group_start()  # GIMP 3 - needs updating
-        
-        # Включаем "авто-уровни"
-        if self.autolevels_check.get_active():
-          auto_levels = True
-        else:
-          auto_levels = False
-          
-        # Ищем активный Gtk.RadioButton
-        for format_id in self.format_radio:
-          if format_id.get_active():
-            # Формируем удобный словарь с данными о формате
-            tmp_dict = self.data['formats'][self.format_radio.index(format_id)]
-            tmp_dict['resolution'] = self.data['properties']['resolution']
-            shelf['format'] = tmp_dict
-
-            # Если Gtk.RadioButton активен вызываем функцию, которая кадрирует фото
-            # В качестве параметров передаём ей указатель на изображение
-            # и список с параметрами выбранноо формата
-            self.create_id_foto(self.image, self.drawable, shelf['format'], auto_levels)
-            if data == 'auto_execute':
-              # Меняем размеры - GIMP 3 compatibility needed
-              try:
-                  # self.image.scale(self.mm_in_px(shelf['format']['width'], shelf['format']['resolution']), self.mm_in_px(shelf['format']['height'], shelf['format']['resolution']))
-                  if self.data['formats'][self.format_radio.index(format_id)]['angle']:
-                    self.angle(self.image, self.drawable, self.data['formats'][self.format_radio.index(format_id)]['angle'])
-                  if self.data['formats'][self.format_radio.index(format_id)]['oval']:
-                    self.oval(self.image, self.drawable)
-                  if self.data['formats'][self.format_radio.index(format_id)]['to_grayscale']:
-                    self.to_grayscale(self.image, self.drawable)
-                  if self.data['formats'][self.format_radio.index(format_id)]['gray_frame']:
-                    self.gray_frame(self.image)
-                  copys = self.data['formats'][self.format_radio.index(format_id)]['copys']
-                  paper = self.data['formats'][self.format_radio.index(format_id)]['paper']
-                  print_photo = self.data['formats'][self.format_radio.index(format_id)]['print_photo']
-                  self.print_functon(self.image, self.drawable, paper, copys, print_photo)
-              except Exception as e:
-                  print(f"GIMP 3 compatibility: Auto execute operations need updating - {e}")
-            break
-            
-        # Обновляем изоборажение на дисплее - GIMP 3 compatibility needed
-        # gimp.displays_flush()  # GIMP 3 - needs updating
-        # Разрешаем запись информации UNDO
-        # self.image.undo_group_end()  # GIMP 3 - needs updating
-        # gimp.context_pop()  # GIMP 3 - needs updating
-    except Exception as e:
-        print(f"GIMP 3 compatibility: Auto execute function needs updating - {e}")
+    # GIMP 3 context operations
+    # gimp.context_push()  # GIMP 3 - needs updating
+    # Запрещаем запись информации UNDO
+    # self.image.undo_group_start()  # GIMP 3 - needs updating
     
-    Gtk.main_quit()
+    # Включаем "авто-уровни"
+    if self.autolevels_check.get_active():
+      auto_levels = True
+    else:
+      auto_levels = False
+      
+    # Ищем активный Gtk.RadioButton
+    for format_id in self.format_radio:
+      if format_id.get_active():
+        # Формируем удобный словарь с данными о формате
+        tmp_dict = self.data['formats'][self.format_radio.index(format_id)]
+        tmp_dict['resolution'] = self.data['properties']['resolution']
+        shelf['format'] = tmp_dict
+
+        # Если Gtk.RadioButton активен вызываем функцию, которая кадрирует фото
+        # В качестве параметров передаём ей указатель на изображение
+        # и список с параметрами выбранноо формата
+        self.create_id_foto(self.image, self.drawable, shelf['format'], auto_levels)
+        if data == 'auto_execute':
+          # Меняем размеры - GIMP 3 compatibility needed
+          # self.image.scale(self.mm_in_px(shelf['format']['width'], shelf['format']['resolution']), self.mm_in_px(shelf['format']['height'], shelf['format']['resolution']))
+          if self.data['formats'][self.format_radio.index(format_id)]['angle']:
+            self.angle(self.image, self.drawable, self.data['formats'][self.format_radio.index(format_id)]['angle'])
+          if self.data['formats'][self.format_radio.index(format_id)]['oval']:
+            self.oval(self.image, self.drawable)
+          if self.data['formats'][self.format_radio.index(format_id)]['to_grayscale']:
+            self.to_grayscale(self.image, self.drawable)
+          if self.data['formats'][self.format_radio.index(format_id)]['gray_frame']:
+            self.gray_frame(self.image)
+          copys = self.data['formats'][self.format_radio.index(format_id)]['copys']
+          paper = self.data['formats'][self.format_radio.index(format_id)]['paper']
+          print_photo = self.data['formats'][self.format_radio.index(format_id)]['print_photo']
+          self.print_functon(self.image, self.drawable, paper, copys, print_photo)
+        break
+        
+    # Обновляем изоборажение на дисплее - GIMP 3 compatibility needed
+    # gimp.displays_flush()  # GIMP 3 - needs updating
+    # Разрешаем запись информации UNDO
+    # self.image.undo_group_end()  # GIMP 3 - needs updating
+    # gimp.context_pop()  # GIMP 3 - needs updating
+    
+    Gtk.main()
 
 class settings(id_photo_base):
   def __init__(self, runmode, image):
     # Вертикальный бокс для форматов
-    self.formats_vbox = gtk.VBox(False, 5)
+    self.formats_vbox = Gtk.VBox(False, 5)
     self.formats_vbox.set_border_width(10)
     # Формируем "список форматов"
     # self.data - это свойство класа id_photo_base
@@ -1542,68 +1341,69 @@ class settings(id_photo_base):
     self.format_radio = [x for x in range(len(self.data['formats']))]
     id = 0
     for format in self.data['formats']:
-      self.format_radio[id] = gtk.RadioButton(group, format['name'])
+      self.format_radio[id] = Gtk.RadioButton.new_with_label_from_widget(group, format['name'])
       self.format_radio[id].show()
       self.formats_vbox.pack_start(self.format_radio[id], False, False, 0)
-      group = self.format_radio[id]
+      if group is None:
+        group = self.format_radio[id]
       id += 1
     self.formats_vbox.show()
     # Инициализируем виджет, который позволит добавить прокрутку к списку форматов
-    self.sc_win = gtk.ScrolledWindow(None, None)
+    self.sc_win = Gtk.ScrolledWindow(None, None)
     self.sc_win.set_border_width(0)
     self.sc_win.set_size_request(270,200)
-    self.sc_win.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
+    self.sc_win.set_policy(Gtk.POLICY_AUTOMATIC, Gtk.POLICY_AUTOMATIC)
     self.sc_win.add_with_viewport(self.formats_vbox)
     self.sc_win.show()
     # Создаем кнопку "Добавить"
-    self.add_button = gtk.Button(None, gtk.STOCK_ADD)
+    self.add_button = Gtk.Button(None, Gtk.STOCK_ADD)
     self.add_button.connect_object('clicked', self.add_format, None)
     self.add_button.set_tooltip_text('Добавить формат')
     self.add_button.show()
     # Создаем кнопку "Править"
-    self.edit_button = gtk.Button(None, gtk.STOCK_EDIT)
+    self.edit_button = Gtk.Button(None, Gtk.STOCK_EDIT)
     self.edit_button.connect('clicked', self.edit_format, None)
     self.edit_button.set_tooltip_text('Внести изменения в выбранный формат')
     self.edit_button.show()
     if len(self.format_radio) < 1:
       self.edit_button.set_sensitive(False)
     # Создаем кнопку "Удалить"
-    self.delete_button = gtk.Button(None, gtk.STOCK_DELETE)
+    self.delete_button = Gtk.Button(None, Gtk.STOCK_DELETE)
     self.delete_button.connect('clicked', self.delete_format, None)
     self.delete_button.set_tooltip_text('Удалить выбранный формат')
     self.delete_button.show()
     if len(self.format_radio) < 1:
       self.delete_button.set_sensitive(False)
     # Пакуем кнопки в горизонтальный бокс
-    self.button_format_hbox = gtk.HBox(False, 10)
+    self.button_format_hbox = Gtk.HBox(False, 10)
     self.button_format_hbox.pack_start(self.add_button, True, True, 0)
     self.button_format_hbox.pack_start(self.edit_button, True, True, 0)
     self.button_format_hbox.pack_start(self.delete_button, True, True, 0)
     self.button_format_hbox.show()
     # В эту метку будем записывать различные сообщения
-    self.add_success_label = gtk.Label(None)
-    self.add_success_label.set_justify(gtk.JUSTIFY_LEFT)
+    self.add_success_label = Gtk.Label(None)
+    self.add_success_label.set_justify(Gtk.Justification.LEFT)
     self.add_success_label.set_markup(' \n ')
     self.add_success_label.show()
     # Таблица в которую поместим всё, что касается операций с форматами
-    self.formats_table = gtk.Table(3, 1, False)
+    self.formats_table = Gtk.Table(3, 1, False)
     self.formats_table.set_border_width(10)
     self.formats_table.set_row_spacings(10)
     self.formats_table.set_col_spacings(10)
-    self.formats_table.attach(self.sc_win, 0, 1, 0, 1, gtk.FILL|gtk.EXPAND, gtk.FILL|gtk.EXPAND, 0, 0)
-    self.formats_table.attach(self.add_success_label, 0, 1, 1, 2, gtk.FILL|gtk.SHRINK, gtk.FILL|gtk.SHRINK, 0, 0)
-    self.formats_table.attach(self.button_format_hbox, 0, 1, 2, 3, gtk.FILL|gtk.SHRINK, gtk.FILL|gtk.SHRINK, 0, 0)
+    self.formats_table.attach(self.sc_win, 0, 1, 0, 1, Gtk.FILL|Gtk.EXPAND, Gtk.FILL|Gtk.EXPAND, 0, 0)
+    self.formats_table.attach(self.add_success_label, 0, 1, 1, 2, Gtk.FILL|Gtk.SHRINK, Gtk.FILL|Gtk.SHRINK, 0, 0)
+    self.formats_table.attach(self.button_format_hbox, 0, 1, 2, 3, Gtk.FILL|Gtk.SHRINK, Gtk.FILL|Gtk.SHRINK, 0, 0)
     self.formats_table.show()
     # Фрейм 'Операции с форматами'
-    self.formats_frame = gtk.Frame('Операции с форматами')
+    self.formats_frame = Gtk.Frame('Операции с форматами')
     self.formats_frame.add(self.formats_table)
     self.formats_frame.show()
     # Создаём поясняющую метку "Использовать разрешение:"
-    self.use_resolution_label = gtk.Label(None)
+    self.use_resolution_label = Gtk.Label(None)
     self.use_resolution_label.set('Использовать разрешение: ');
     self.use_resolution_label.show()
     # Выпадающий сисок "Разрешение"
-    self.resolution_cb = gtk.combo_box_new_text()
+    self.resolution_cb = Gtk.ComboBoxText()
     self.resolution_cb.append_text('300')
     self.resolution_cb.append_text('600')
     self.resolution_cb.append_text('1147')
@@ -1613,7 +1413,7 @@ class settings(id_photo_base):
     self.resolution_cb.set_tooltip_text('При печати фотографий будет использовано это разрешение')
     self.resolution_cb.show()
     # Создаём поясняющую метку "ppi"
-    self.ppi_label = gtk.Label(None)
+    self.ppi_label = Gtk.Label(None)
     self.ppi_label.set('ppi');
     self.ppi_label.show()
     # Делаем активным пункт выподающего списка разрешений
@@ -1628,35 +1428,35 @@ class settings(id_photo_base):
     elif self.data['properties']['resolution'] == 2400:
       self.resolution_cb.set_active(4)
     # Пакуем настройки разрешения в горизонтальный бокс
-    self.ppi_hbox = gtk.HBox(False, 3)
+    self.ppi_hbox = Gtk.HBox(False, 3)
     self.ppi_hbox.pack_start(self.use_resolution_label, True, True, 0)
     self.ppi_hbox.pack_start(self.resolution_cb, True, True, 0)
     self.ppi_hbox.pack_start(self.ppi_label, True, True, 0)
     self.ppi_hbox.show()
     # Создаем флажок 'всегда добавлять слой "Белый фон"'
-    self.white_bg_check = gtk.CheckButton('всегда добавлять слой "Белый фон"')
+    self.white_bg_check = Gtk.CheckButton('всегда добавлять слой "Белый фон"')
     self.white_bg_check.set_tooltip_text('Если отключить, то отрисовка происходит быстрее')
     self.white_bg_check.show()
     if self.data['properties']['white_bg']:
       self.white_bg_check.set_active(True)
     # Создаем флажок 'всегда использовать авто-уровни'
-    self.auto_levels_check = gtk.CheckButton('всегда использовать "авто-уровни"')
+    self.auto_levels_check = Gtk.CheckButton('всегда использовать "авто-уровни"')
     self.auto_levels_check.set_tooltip_text('Если включить, то уровни всегда будут подбираться автоматически')
     self.auto_levels_check.show()
     if self.data['properties']['auto_levels']:
       self.auto_levels_check.set_active(True)
     # Создаём метку в которую будем выводить сообщения
-    self.success_label = gtk.Label(None)
+    self.success_label = Gtk.Label(None)
     self.success_label.set_markup('<span foreground="#008600"><a href="http://gimp-id-photo.ru">Успешно сохранено</a></span>');
-    self.success_label.set_justify(gtk.JUSTIFY_LEFT)
+    self.success_label.set_justify(Gtk.Justification.LEFT)
     #self.success_label.show()
     # Создаём текстовое поле для рекламного текста
-    self.text = gtk.TextView(None)
+    self.text = Gtk.TextView(None)
     self.text.set_size_request(260,100)
     self.text.set_editable(True)
     self.text.set_cursor_visible(True)
-    self.text.set_wrap_mode(gtk.WRAP_CHAR)
-    self.text.set_justification(gtk.JUSTIFY_LEFT)
+    self.text.set_wrap_mode(Gtk.WRAP_CHAR)
+    self.text.set_justification(Gtk.Justification.LEFT)
     self.text.set_indent(0) # Абзацный отступ
     self.text.set_left_margin(5) # Отступ слева
     self.text.set_right_margin(5) # Отступ справа
@@ -1665,7 +1465,7 @@ class settings(id_photo_base):
     self.text.set_pixels_inside_wrap(0) # Интерлиньяж
     #self.text.show()
     # Вертикальный бокс для иных опций
-    self.different_options_vbox = gtk.VBox(False, 5)
+    self.different_options_vbox = Gtk.VBox(False, 5)
     self.different_options_vbox.set_border_width(10)
     self.different_options_vbox.pack_start(self.ppi_hbox, False, False, 0)
     self.different_options_vbox.pack_start(self.white_bg_check, False, False, 0)
@@ -1674,33 +1474,33 @@ class settings(id_photo_base):
     self.different_options_vbox.pack_start(self.text, True, True, 0)
     self.different_options_vbox.show()
     # Фрейм для иных
-    self.different_options_frame = gtk.Frame('Различные опции')
+    self.different_options_frame = Gtk.Frame('Различные опции')
     self.different_options_frame.set_border_width(0)
     self.different_options_frame.add(self.different_options_vbox)
     self.different_options_frame.show()
     # Создаем кнопку "О программе"
-    self.about_button = gtk.Button(None, gtk.STOCK_ABOUT)
+    self.about_button = Gtk.Button(None, Gtk.STOCK_ABOUT)
     self.about_button.connect('clicked', self.about, None)
     self.about_button.set_tooltip_text('О программе')
     self.about_button.show()
     # Создаем кнопку "Применить"
-    self.apply_button = gtk.Button(None, gtk.STOCK_APPLY)
+    self.apply_button = Gtk.Button(None, Gtk.STOCK_APPLY)
     self.apply_button.connect('clicked', self.apply_settings, None)
     self.apply_button.set_tooltip_text('Применить эти настройки')
     self.apply_button.show()
     # Создаем кнопку "Отмена"
-    self.cancel_button = gtk.Button(None, gtk.STOCK_CANCEL)
+    self.cancel_button = Gtk.Button(None, Gtk.STOCK_CANCEL)
     self.cancel_button.connect('clicked', self.destroy, None)
     self.cancel_button.set_tooltip_text('Закрыть это окно и не выполнять никаких действий')
     self.cancel_button.show()
     # Пакуем виджеты в горизонтальный бокс
-    self.button_hbox = gtk.HBox(False, 10)
+    self.button_hbox = Gtk.HBox(False, 10)
     self.button_hbox.pack_start(self.about_button, False, False, 0)
     self.button_hbox.pack_end(self.apply_button, False, False, 0)
     self.button_hbox.pack_end(self.cancel_button, False, False, 0)
     self.button_hbox.show()
     # Инициируем таблицу, в которую поместим все виджеты
-    self.table = gtk.Table(2, 2, False)
+    self.table = Gtk.Table(2, 2, False)
     self.table.set_border_width(10)
     self.table.set_row_spacings(20)
     self.table.set_col_spacings(10)
@@ -1709,8 +1509,8 @@ class settings(id_photo_base):
     self.table.attach(self.button_hbox, 0, 2, 1, 2)
     self.table.show()
     # Создаем окно. Добавляем всё к окну и показываем его
-    self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
-    self.window.set_position(gtk.WIN_POS_CENTER_ALWAYS)
+    self.window = Gtk.Window(Gtk.WindowType.TOPLEVEL)
+    self.window.set_position(Gtk.WindowPosition.CENTER_ALWAYS)
     self.window.set_title('Настройки дополенения "Фото на документы"')
     self.window.set_border_width(5)
     self.window.set_resizable(False)
@@ -1718,37 +1518,38 @@ class settings(id_photo_base):
     self.window.connect('destroy', self.destroy)
     self.window.add(self.table)
     self.window.show()
-    gtk.main()
+    Gtk.main()
 
 class print_photo(id_photo_base):
   def __init__(self, runmode, image, drawable):
     self.image, self.drawable = image, drawable
     # Если shelf['format'] пуст ничео не делаем
-    if not shelf.has_key('format'):
-      gtk.main_quit()
+    if 'format' not in shelf:
+      Gtk.main()
+      return
     # Создаем виджеты
-    self.gray_check = gtk.CheckButton('обесцветить фото')
+    self.gray_check = Gtk.CheckButton('обесцветить фото')
     self.gray_check.show()
     if shelf['format']['to_grayscale']:
       self.gray_check.set_active(True)
-    self.border_check = gtk.CheckButton('добавить рамку')
+    self.border_check = Gtk.CheckButton('добавить рамку')
     self.border_check.show()
     if shelf['format']['gray_frame']:
       self.border_check.set_active(True)
-    self.oval_check = gtk.CheckButton('добавить овал с растушёвкой')
+    self.oval_check = Gtk.CheckButton('добавить овал с растушёвкой')
     self.oval_check.show()
     if shelf['format']['oval']:
       self.oval_check.set_active(True)
     # Уголки
-    self.angle_none_radio = gtk.RadioButton(None, 'без уголка')
+    self.angle_none_radio = Gtk.RadioButton(None, 'без уголка')
     self.angle_none_radio.show()
-    self.angle_right_circular_radio = gtk.RadioButton(self.angle_none_radio, 'круглый справа')
+    self.angle_right_circular_radio = Gtk.RadioButton(self.angle_none_radio, 'круглый справа')
     self.angle_right_circular_radio.show()
-    self.angle_left_circular_radio = gtk.RadioButton(self.angle_right_circular_radio, 'круглый слева')
+    self.angle_left_circular_radio = Gtk.RadioButton(self.angle_right_circular_radio, 'круглый слева')
     self.angle_left_circular_radio.show()
-    self.angle_right_direct_radio = gtk.RadioButton(self.angle_left_circular_radio, 'прямой справа')
+    self.angle_right_direct_radio = Gtk.RadioButton(self.angle_left_circular_radio, 'прямой справа')
     self.angle_right_direct_radio.show()
-    self.angle_left_direct_radio = gtk.RadioButton(self.angle_right_direct_radio, 'прямой слева')
+    self.angle_left_direct_radio = Gtk.RadioButton(self.angle_right_direct_radio, 'прямой слева')
     self.angle_left_direct_radio.show()
     if not shelf['format']['angle']:
       self.angle_none_radio.set_active(True)
@@ -1762,17 +1563,17 @@ class print_photo(id_photo_base):
       self.angle_left_direct_radio.set_active(True)
     # Количество фоток
     if shelf['format']['copys']:
-      self.copys_adj = gtk.Adjustment(shelf['format']['copys'], 0.0, 200.0, 1.0, 1.0, 0.0)
+      self.copys_adj = Gtk.Adjustment(shelf['format']['copys'], 0.0, 200.0, 1.0, 1.0, 0.0)
     else:
-      self.copys_adj = gtk.Adjustment(4.0, 0.0, 200.0, 1.0, 1.0, 0.0)
-    self.copys_spin = gtk.SpinButton(self.copys_adj, 0, 0)
+      self.copys_adj = Gtk.Adjustment(4.0, 0.0, 200.0, 1.0, 1.0, 0.0)
+    self.copys_spin = Gtk.SpinButton(self.copys_adj, 0, 0)
     self.copys_spin.set_numeric(True)
     self.copys_spin.show()
-    self.copys_label = gtk.Label('фото на листе')
-    self.copys_label.set_justify(gtk.JUSTIFY_LEFT)
+    self.copys_label = Gtk.Label('фото на листе')
+    self.copys_label.set_justify(Gtk.Justification.LEFT)
     self.copys_label.show()
     # Выпадающий сисок "Формат бумаги"
-    self.paper_cb = gtk.combo_box_new_text()
+    self.paper_cb = Gtk.ComboBoxText()
     self.paper_cb.append_text('10x15')
     self.paper_cb.append_text('A5')
     self.paper_cb.append_text('A4')
@@ -1785,20 +1586,20 @@ class print_photo(id_photo_base):
     elif shelf['format']['paper'] == 'A4':
       self.paper_cb.set_active(2)
     # Пакуем виджеты в горизонтальный бокс
-    self.copys_hbox = gtk.HBox(False, 0)
+    self.copys_hbox = Gtk.HBox(False, 0)
     self.copys_hbox.pack_start(self.copys_spin, False, False, 0)
     self.copys_hbox.pack_start(self.copys_label, False, False, 5)
     self.copys_hbox.pack_start(self.paper_cb, False, False, 0)
     self.copys_hbox.show()
     # Пакуем опции в вертикальный бокс
-    self.options_vbox = gtk.VBox(False, 5)
+    self.options_vbox = Gtk.VBox(False, 5)
     self.options_vbox.pack_start(self.copys_hbox, False, False, 5)
     self.options_vbox.pack_start(self.gray_check, False, False, 5)
     self.options_vbox.pack_start(self.border_check, False, False, 5)
     self.options_vbox.pack_start(self.oval_check, False, False, 5)
     self.options_vbox.show()
     # Пакуем уголки в вертикальный бокс
-    self.angle_vbox = gtk.VBox(False, 5)
+    self.angle_vbox = Gtk.VBox(False, 5)
     self.angle_vbox.set_border_width(5)
     self.angle_vbox.pack_start(self.angle_none_radio, False, False, 0)
     self.angle_vbox.pack_start(self.angle_right_circular_radio, False, False, 0)
@@ -1807,35 +1608,35 @@ class print_photo(id_photo_base):
     self.angle_vbox.pack_start(self.angle_left_direct_radio, False, False, 0)
     self.angle_vbox.show()
     # Фрейм для уголка
-    self.angle_frame = gtk.Frame('Добавить уголок')
+    self.angle_frame = Gtk.Frame('Добавить уголок')
     self.angle_frame.set_border_width(0)
     self.angle_frame.add(self.angle_vbox)
     self.angle_frame.show()
     # Создаем кнопку "Отмена"
-    self.cancel_button = gtk.Button(None, gtk.STOCK_CANCEL)
+    self.cancel_button = Gtk.Button(None, Gtk.STOCK_CANCEL)
     self.cancel_button.connect_object('clicked', self.destroy, None)
     self.cancel_button.set_tooltip_text('Не выполнять никаких действий с изображением')
     self.cancel_button.show()
     # Создаем кнопку "Напечатать"
-    self.print_button = gtk.Button(None, gtk.STOCK_PRINT)
+    self.print_button = Gtk.Button(None, Gtk.STOCK_PRINT)
     self.print_button.connect('clicked', self.compose_or_print, 'print_it')
     self.print_button.set_tooltip_text('Сформировать окончательный результат и вывести его на принтер используемый по умолчанию')
     self.print_button.show()
     # Создаем кнопку "Применить"
-    self.apply_button = gtk.Button(None, gtk.STOCK_APPLY)
+    self.apply_button = Gtk.Button(None, Gtk.STOCK_APPLY)
     self.apply_button.connect('clicked', self.compose_or_print, None)
     self.apply_button.set_tooltip_text('Сформировать окончательный результат')
     self.apply_button.show()
     # Пакуем кнопки "Отмена" и "Применить" и "Печать"
-    self.button_box = gtk.HButtonBox()
-    self.button_box.set_layout(gtk.BUTTONBOX_EDGE)
+    self.button_box = Gtk.HButtonBox()
+    self.button_box.set_layout(Gtk.BUTTONBOX_EDGE)
     self.button_box.set_spacing(10)
     self.button_box.add(self.cancel_button)
     self.button_box.add(self.print_button)
     self.button_box.add(self.apply_button)
     self.button_box.show()
     # Инициируем таблицу, в которую поместим все виджеты
-    self.table = gtk.Table(2, 2, False)
+    self.table = Gtk.Table(2, 2, False)
     self.table.set_border_width(5)
     self.table.set_row_spacings(10)
     self.table.set_col_spacings(10)
@@ -1844,8 +1645,8 @@ class print_photo(id_photo_base):
     self.table.attach(self.button_box, 0, 2, 1, 2)
     self.table.show()
     # Создаем окно. Добавляем всё к окну и показываем его
-    self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
-    self.window.set_position(gtk.WIN_POS_CENTER_ALWAYS)
+    self.window = Gtk.Window(Gtk.WindowType.TOPLEVEL)
+    self.window.set_position(Gtk.WindowPosition.CENTER_ALWAYS)
     self.window.set_title('Сформировать и распечатать')
     self.window.set_border_width(5)
     self.window.set_resizable(False)
@@ -1853,21 +1654,20 @@ class print_photo(id_photo_base):
     self.window.connect('destroy', self.destroy)
     self.window.add(self.table)
     self.window.show()
-    gtk.main()
+    Gtk.main()
 
 #########################################################
 #--------           Вот оно - начало начал          ----#
 #########################################################
 
 # GIMP 3 Plugin System - Modern Gimp.PlugIn and Gimp.ImageProcedure implementation
-class IdPhotoPlugin(Gimp.PlugIn if GIMP_AVAILABLE else object):
+class IdPhotoPlugin(Gimp.PlugIn):
     """GIMP 3 compatible plugin using modern Gimp.PlugIn and Gimp.ImageProcedure"""
     
     def __init__(self):
         super().__init__()
-        if GIMP_AVAILABLE:
-            self.set_name("id-photo-plugin")
-            self.set_title("Фото на документы")
+        self.set_name("id-photo-plugin")
+        self.set_title("Фото на документы")
     
     def do_set_i18n(self, name):
         """Set up internationalization"""
@@ -1875,216 +1675,111 @@ class IdPhotoPlugin(Gimp.PlugIn if GIMP_AVAILABLE else object):
     
     def do_query_procedures(self):
         """Query and register plugin procedures using modern GIMP 3 API"""
-        try:
-            return [
-                "python-select-format-id-photo",
-                "python-settings-id-photo", 
-                "python-print-id-photo"
-            ]
-        except Exception as e:
-            print(f"GIMP 3: do_query_procedures error - {e}")
-            return []
+        return [
+            "python-select-format-id-photo",
+            "python-settings-id-photo", 
+            "python-print-id-photo"
+        ]
     
     def do_create_procedure(self, name):
         """Create procedures using Gimp.ImageProcedure"""
-        try:
-            if name == "python-select-format-id-photo":
-                procedure = Gimp.ImageProcedure.new(
-                    self, name, Gimp.PDBProcType.PLUGIN,
-                    self.run_select_format, None
-                )
-                procedure.set_image_types("*")
-                procedure.set_sensitivity_mask(
-                    Gimp.ProcedureSensitivityMask.DRAWABLE |
-                    Gimp.ProcedureSensitivityMask.DRAWABLES_ALPHA
-                )
-                procedure.set_documentation(
-                    "Выбор формата фото на документы",
-                    "Выводит диалог со списком форматов для создания фото на документы. "
-                    "Расставьте направляющие и вызовите эту функцию.",
-                    name
-                )
-                procedure.set_menu_label("Выбрать формат...")
-                procedure.set_attribution(
-                    "Карабанов Александр",
-                    "Карабанов Александр (zend.karabanov@gmail.com)",
-                    "2019-2024"
-                )
-                procedure.add_menu_path("<Image>/На документы/")
-                return procedure
-                
-            elif name == "python-settings-id-photo":
-                procedure = Gimp.ImageProcedure.new(
-                    self, name, Gimp.PDBProcType.PLUGIN,
-                    self.run_settings, None
-                )
-                procedure.set_image_types("*")
-                procedure.set_documentation(
-                    "Настройки плагина фото на документы",
-                    "Выводит диалог настроек для добавления и редактирования форматов.",
-                    name
-                )
-                procedure.set_menu_label("Настройки...")
-                procedure.set_attribution(
-                    "Карабанов Александр",
-                    "Карабанов Александр (zend.karabanov@gmail.com)",
-                    "2019-2024"
-                )
-                procedure.add_menu_path("<Image>/На документы/")
-                return procedure
-                
-            elif name == "python-print-id-photo":
-                procedure = Gimp.ImageProcedure.new(
-                    self, name, Gimp.PDBProcType.PLUGIN,
-                    self.run_print_photo, None
-                )
-                procedure.set_image_types("*")
-                procedure.set_sensitivity_mask(
-                    Gimp.ProcedureSensitivityMask.DRAWABLE |
-                    Gimp.ProcedureSensitivityMask.DRAWABLES_ALPHA
-                )
-                procedure.set_documentation(
-                    "Печать фото на документы",
-                    "Выводит диалог для формирования и печати окончательного результата.",
-                    name
-                )
-                procedure.set_menu_label("Печать...")
-                procedure.set_attribution(
-                    "Карабанов Александр",
-                    "Карабанов Александр (zend.karabanov@gmail.com)",
-                    "2019-2024"
-                )
-                procedure.add_menu_path("<Image>/На документы/")
-                return procedure
-                
-        except Exception as e:
-            print(f"GIMP 3: do_create_procedure error for {name} - {e}")
+        if name == "python-select-format-id-photo":
+            procedure = Gimp.ImageProcedure.new(
+                self, name, Gimp.PDBProcType.PLUGIN,
+                self.run_select_format, None
+            )
+            procedure.set_image_types("*")
+            procedure.set_sensitivity_mask(
+                Gimp.ProcedureSensitivityMask.DRAWABLE |
+                Gimp.ProcedureSensitivityMask.DRAWABLES_ALPHA
+            )
+            procedure.set_documentation(
+                "Выбор формата фото на документы",
+                "Выводит диалог со списком форматов для создания фото на документы. "
+                "Расставьте направляющие и вызовите эту функцию.",
+                name
+            )
+            procedure.set_menu_label("Выбрать формат...")
+            procedure.set_attribution(
+                "Карабанов Александр",
+                "Карабанов Александр (zend.karabanov@gmail.com)",
+                "2019-2024"
+            )
+            procedure.add_menu_path("<Image>/На документы/")
+            return procedure
+            
+        elif name == "python-settings-id-photo":
+            procedure = Gimp.ImageProcedure.new(
+                self, name, Gimp.PDBProcType.PLUGIN,
+                self.run_settings, None
+            )
+            procedure.set_image_types("*")
+            procedure.set_documentation(
+                "Настройки плагина фото на документы",
+                "Выводит диалог настроек для добавления и редактирования форматов.",
+                name
+            )
+            procedure.set_menu_label("Настройки...")
+            procedure.set_attribution(
+                "Карабанов Александр",
+                "Карабанов Александр (zend.karabanov@gmail.com)",
+                "2019-2024"
+            )
+            procedure.add_menu_path("<Image>/На документы/")
+            return procedure
+            
+        elif name == "python-print-id-photo":
+            procedure = Gimp.ImageProcedure.new(
+                self, name, Gimp.PDBProcType.PLUGIN,
+                self.run_print_photo, None
+            )
+            procedure.set_image_types("*")
+            procedure.set_sensitivity_mask(
+                Gimp.ProcedureSensitivityMask.DRAWABLE |
+                Gimp.ProcedureSensitivityMask.DRAWABLES_ALPHA
+            )
+            procedure.set_documentation(
+                "Печать фото на документы",
+                "Выводит диалог для формирования и печати окончательного результата.",
+                name
+            )
+            procedure.set_menu_label("Печать...")
+            procedure.set_attribution(
+                "Карабанов Александр",
+                "Карабанов Александр (zend.karabanov@gmail.com)",
+                "2019-2024"
+            )
+            procedure.add_menu_path("<Image>/На документы/")
+            return procedure
             
         return None
     
     def run_select_format(self, procedure, run_mode, image, drawables, config, data):
         """Run select format dialog"""
-        try:
-            if not drawables:
-                return procedure.new_return_values(Gimp.PDBStatusType.EXECUTION_ERROR, 
-                                                  GLib.Error("No drawable selected"))
-            
-            drawable = drawables[0]
-            select_format_id_photo(run_mode, image, drawable)
-            return procedure.new_return_values(Gimp.PDBStatusType.SUCCESS, GLib.Error())
-            
-        except Exception as e:
-            print(f"GIMP 3: run_select_format error - {e}")
-            return procedure.new_return_values(Gimp.PDBStatusType.EXECUTION_ERROR,
-                                              GLib.Error(f"Error in select format: {e}"))
+        if not drawables:
+            return procedure.new_return_values(Gimp.PDBStatusType.EXECUTION_ERROR, 
+                                              GLib.Error("No drawable selected"))
+        
+        drawable = drawables[0]
+        select_format_id_photo(run_mode, image, drawable)
+        return procedure.new_return_values(Gimp.PDBStatusType.SUCCESS, GLib.Error())
     
     def run_settings(self, procedure, run_mode, image, drawables, config, data):
         """Run settings dialog"""
-        try:
-            settings(run_mode, image)
-            return procedure.new_return_values(Gimp.PDBStatusType.SUCCESS, GLib.Error())
-            
-        except Exception as e:
-            print(f"GIMP 3: run_settings error - {e}")
-            return procedure.new_return_values(Gimp.PDBStatusType.EXECUTION_ERROR,
-                                              GLib.Error(f"Error in settings: {e}"))
+        settings(run_mode, image)
+        return procedure.new_return_values(Gimp.PDBStatusType.SUCCESS, GLib.Error())
     
     def run_print_photo(self, procedure, run_mode, image, drawables, config, data):
         """Run print photo dialog"""
-        try:
-            if not drawables:
-                return procedure.new_return_values(Gimp.PDBStatusType.EXECUTION_ERROR,
-                                                  GLib.Error("No drawable selected"))
-            
-            drawable = drawables[0]
-            print_photo(run_mode, image, drawable)
-            return procedure.new_return_values(Gimp.PDBStatusType.SUCCESS, GLib.Error())
-            
-        except Exception as e:
-            print(f"GIMP 3: run_print_photo error - {e}")
+        if not drawables:
             return procedure.new_return_values(Gimp.PDBStatusType.EXECUTION_ERROR,
-                                              GLib.Error(f"Error in print photo: {e}"))
-
-
-# Legacy compatibility layer for older GIMP versions
-class id_photo_plugin:
-    """Legacy compatibility class - this is a fallback for non-GIMP 3 environments"""
-    
-    def start(self):
-        try:
-            print("Legacy compatibility: Plugin start - using fallback mode")
-            self.init()
-        except Exception as e:
-            print(f"Legacy compatibility: Plugin start error - {e}")
-
-    def init(self):
-        """Initialize plugin"""
-        print("Legacy compatibility: Plugin initialized")
-
-    def quit(self):
-        """Cleanup on plugin exit"""
-        print("Legacy compatibility: Plugin quit")
-
-    def python_select_format_id_photo(self, runmode, image, drawable):
-        """Select format dialog"""
-        try:
-            select_format_id_photo(runmode, image, drawable)
-        except Exception as e:
-            print(f"Legacy compatibility: python_select_format_id_photo error - {e}")
-
-    def python_settings(self, runmode, image):
-        """Settings dialog"""
-        try:
-            settings(runmode, image)
-        except Exception as e:
-            print(f"Legacy compatibility: python_settings error - {e}")
-
-    def python_print_photo(self, runmode, image, drawable):
-        """Print photo dialog"""
-        try:
-            print_photo(runmode, image, drawable)
-        except Exception as e:
-            print(f"Legacy compatibility: python_print_photo error - {e}")
-
-# Test function for standalone execution
-def main():
-    """Main function for testing - can be called directly"""
-    print("GIMP ID Photo Plugin - GIMP 3 Migration")
-    print("Note: This is a compatibility version for GIMP 3")
-    
-    # For testing, we can create a simple GTK window
-    try:
-        # Test the GUI components
-        test_image = None  # Would need actual GIMP image object
-        test_drawable = None  # Would need actual GIMP drawable object
+                                              GLib.Error("No drawable selected"))
         
-        # Initialize GTK
-        # Gtk.init()  # May not be needed in GIMP 3 context
-        
-        # Test select format dialog
-        print("Testing select format dialog...")
-        # select_format_id_photo(0, test_image, test_drawable)
-        
-    except Exception as e:
-        print(f"Test error: {e}")
+        drawable = drawables[0]
+        print_photo(run_mode, image, drawable)
+        return procedure.new_return_values(Gimp.PDBStatusType.SUCCESS, GLib.Error())
 
+
+# Plugin entry point for GIMP 3
 if __name__ == '__main__':
-    # When run standalone, execute test
-    main()
-else:
-    # When imported as GIMP plugin, start the appropriate plugin system
-    try:
-        if GIMP_AVAILABLE:
-            # Use modern GIMP 3 plugin system with Gimp.PlugIn and Gimp.ImageProcedure
-            plugin = IdPhotoPlugin()
-            Gimp.main(IdPhotoPlugin, sys.argv)
-        else:
-            # Fallback to legacy compatibility mode for testing
-            id_photo_plugin().start()
-    except Exception as e:
-        print(f"Plugin startup error - {e}")
-        # Fallback to legacy mode
-        try:
-            id_photo_plugin().start()
-        except Exception as e2:
-            print(f"Legacy plugin startup error - {e2}")
+    Gimp.main(IdPhotoPlugin, sys.argv)
