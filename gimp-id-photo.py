@@ -1615,7 +1615,7 @@ class select_format_id_photo(id_photo_base):
 class settings(id_photo_base):
   def __init__(self, runmode, image):
     # Вертикальный бокс для форматов
-    self.formats_vbox = Gtk.VBox(False, 5)
+    self.formats_vbox = Gtk.VBox(homogeneous=False, spacing=5)
     self.formats_vbox.set_border_width(10)
     # Формируем "список форматов"
     # self.data - это свойство класа id_photo_base
@@ -1631,47 +1631,45 @@ class settings(id_photo_base):
       id += 1
     self.formats_vbox.show()
     # Инициализируем виджет, который позволит добавить прокрутку к списку форматов
-    self.sc_win = Gtk.ScrolledWindow(None, None)
+    self.sc_win = Gtk.ScrolledWindow(hadjustment=None, vadjustment=None)
     self.sc_win.set_border_width(0)
     self.sc_win.set_size_request(270,200)
     self.sc_win.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
-    self.sc_win.add_with_viewport(self.formats_vbox)
+    self.sc_win.add(self.formats_vbox)
     self.sc_win.show()
     # Создаем кнопку "Добавить"
-    self.add_button = Gtk.Button(None, Gtk.STOCK_ADD)
-    self.add_button.connect_object('clicked', self.add_format, None)
+    self.add_button = Gtk.Button.new_with_mnemonic("_Добавить")
+    self.add_button.connect_data('clicked', self.add_format, None, connect_flags=GObject.ConnectFlags.SWAPPED)
     self.add_button.set_tooltip_text('Добавить формат')
     self.add_button.show()
     # Создаем кнопку "Править"
-    self.edit_button = Gtk.Button(None, Gtk.STOCK_EDIT)
+    self.edit_button = Gtk.Button.new_with_mnemonic("_Править")
     self.edit_button.connect('clicked', self.edit_format, None)
     self.edit_button.set_tooltip_text('Внести изменения в выбранный формат')
     self.edit_button.show()
     if len(self.format_radio) < 1:
       self.edit_button.set_sensitive(False)
     # Создаем кнопку "Удалить"
-    self.delete_button = Gtk.Button(None, Gtk.STOCK_DELETE)
+    self.delete_button = Gtk.Button.new_with_mnemonic("_Удалить")
     self.delete_button.connect('clicked', self.delete_format, None)
     self.delete_button.set_tooltip_text('Удалить выбранный формат')
     self.delete_button.show()
     if len(self.format_radio) < 1:
       self.delete_button.set_sensitive(False)
     # Пакуем кнопки в горизонтальный бокс
-    self.button_format_hbox = Gtk.HBox(False, 10)
+    self.button_format_hbox = Gtk.HBox(homogeneous=False, spacing=10)
     self.button_format_hbox.pack_start(self.add_button, True, True, 0)
     self.button_format_hbox.pack_start(self.edit_button, True, True, 0)
     self.button_format_hbox.pack_start(self.delete_button, True, True, 0)
     self.button_format_hbox.show()
     # В эту метку будем записывать различные сообщения
-    self.add_success_label = Gtk.Label(None)
+    self.add_success_label = Gtk.Label(label=None)
     self.add_success_label.set_justify(Gtk.Justification.LEFT)
     self.add_success_label.set_markup(' \n ')
     self.add_success_label.show()
     # Таблица в которую поместим всё, что касается операций с форматами
-    self.formats_table = Gtk.Table(3, 1, False)
+    self.formats_table = Gtk.Table(n_rows=3, n_columns=1, homogeneous=False)
     self.formats_table.set_border_width(10)
-    self.formats_table.set_row_spacings(10)
-    self.formats_table.set_col_spacings(10)
     self.formats_table.attach(self.sc_win, 0, 1, 0, 1, Gtk.AttachOptions.FILL | Gtk.AttachOptions.EXPAND, Gtk.AttachOptions.FILL | Gtk.AttachOptions.EXPAND, 0, 0)
     self.formats_table.attach(self.add_success_label, 0, 1, 1, 2, Gtk.AttachOptions.FILL | Gtk.AttachOptions.SHRINK, Gtk.AttachOptions.FILL | Gtk.AttachOptions.SHRINK, 0, 0)
     self.formats_table.attach(self.button_format_hbox, 0, 1, 2, 3, Gtk.AttachOptions.FILL | Gtk.AttachOptions.SHRINK, Gtk.AttachOptions.FILL | Gtk.AttachOptions.SHRINK, 0, 0)
@@ -1681,7 +1679,7 @@ class settings(id_photo_base):
     self.formats_frame.add(self.formats_table)
     self.formats_frame.show()
     # Создаём поясняющую метку "Использовать разрешение:"
-    self.use_resolution_label = Gtk.Label(None)
+    self.use_resolution_label = Gtk.Label(label=None)
     self.use_resolution_label.set_text('Использовать разрешение: ')
     self.use_resolution_label.show()
     # Выпадающий сисок "Разрешение"
@@ -1695,8 +1693,7 @@ class settings(id_photo_base):
     self.resolution_cb.set_tooltip_text('При печати фотографий будет использовано это разрешение')
     self.resolution_cb.show()
     # Создаём поясняющую метку "ppi"
-    self.ppi_label = Gtk.Label(None)
-    self.ppi_label.set_text('ppi');
+    self.ppi_label = Gtk.Label(label='ppi')
     self.ppi_label.show()
     # Делаем активным пункт выподающего списка разрешений
     if self.data['properties']['resolution'] == 300:
@@ -1710,25 +1707,25 @@ class settings(id_photo_base):
     elif self.data['properties']['resolution'] == 2400:
       self.resolution_cb.set_active(4)
     # Пакуем настройки разрешения в горизонтальный бокс
-    self.ppi_hbox = Gtk.HBox(False, 3)
+    self.ppi_hbox = Gtk.HBox(homogeneous=False, spacing=3)
     self.ppi_hbox.pack_start(self.use_resolution_label, True, True, 0)
     self.ppi_hbox.pack_start(self.resolution_cb, True, True, 0)
     self.ppi_hbox.pack_start(self.ppi_label, True, True, 0)
     self.ppi_hbox.show()
     # Создаем флажок 'всегда добавлять слой "Белый фон"'
-    self.white_bg_check = Gtk.CheckButton('всегда добавлять слой "Белый фон"')
+    self.white_bg_check = Gtk.CheckButton(label='всегда добавлять слой "Белый фон"')
     self.white_bg_check.set_tooltip_text('Если отключить, то отрисовка происходит быстрее')
     self.white_bg_check.show()
     if self.data['properties']['white_bg']:
       self.white_bg_check.set_active(True)
     # Создаем флажок 'всегда использовать авто-уровни'
-    self.auto_levels_check = Gtk.CheckButton('всегда использовать "авто-уровни"')
+    self.auto_levels_check = Gtk.CheckButton(label='всегда использовать "авто-уровни"')
     self.auto_levels_check.set_tooltip_text('Если включить, то уровни всегда будут подбираться автоматически')
     self.auto_levels_check.show()
     if self.data['properties']['auto_levels']:
       self.auto_levels_check.set_active(True)
     # Создаём метку в которую будем выводить сообщения
-    self.success_label = Gtk.Label(None)
+    self.success_label = Gtk.Label(label=None)
     self.success_label.set_markup('<span foreground="#008600"><a href="http://gimp-id-photo.ru">Успешно сохранено</a></span>');
     self.success_label.set_justify(Gtk.Justification.LEFT)
     #self.success_label.show()
@@ -1747,7 +1744,7 @@ class settings(id_photo_base):
     self.text.set_pixels_inside_wrap(0) # Интерлиньяж
     #self.text.show()
     # Вертикальный бокс для иных опций
-    self.different_options_vbox = Gtk.VBox(False, 5)
+    self.different_options_vbox = Gtk.VBox(homogeneous=False, spacing=5)
     self.different_options_vbox.set_border_width(10)
     self.different_options_vbox.pack_start(self.ppi_hbox, False, False, 0)
     self.different_options_vbox.pack_start(self.white_bg_check, False, False, 0)
@@ -1761,37 +1758,35 @@ class settings(id_photo_base):
     self.different_options_frame.add(self.different_options_vbox)
     self.different_options_frame.show()
     # Создаем кнопку "О программе"
-    self.about_button = Gtk.Button(None, Gtk.STOCK_ABOUT)
+    self.about_button = Gtk.Button.new_with_mnemonic("_О программе")
     self.about_button.connect('clicked', self.about, None)
     self.about_button.set_tooltip_text('О программе')
     self.about_button.show()
     # Создаем кнопку "Применить"
-    self.apply_button = Gtk.Button(None, Gtk.STOCK_APPLY)
+    self.apply_button = Gtk.Button.new_with_mnemonic("_Применить")
     self.apply_button.connect('clicked', self.apply_settings, None)
     self.apply_button.set_tooltip_text('Применить эти настройки')
     self.apply_button.show()
     # Создаем кнопку "Отмена"
-    self.cancel_button = Gtk.Button(None, Gtk.STOCK_CANCEL)
+    self.cancel_button = Gtk.Button.new_with_mnemonic("_Отмена")
     self.cancel_button.connect('clicked', self.destroy, None)
     self.cancel_button.set_tooltip_text('Закрыть это окно и не выполнять никаких действий')
     self.cancel_button.show()
     # Пакуем виджеты в горизонтальный бокс
-    self.button_hbox = Gtk.HBox(False, 10)
+    self.button_hbox = Gtk.HBox(homogeneous=False, spacing=10)
     self.button_hbox.pack_start(self.about_button, False, False, 0)
     self.button_hbox.pack_end(self.apply_button, False, False, 0)
     self.button_hbox.pack_end(self.cancel_button, False, False, 0)
     self.button_hbox.show()
     # Инициируем таблицу, в которую поместим все виджеты
-    self.table = Gtk.Table(2, 2, False)
+    self.table = Gtk.Table(n_rows=2, n_columns=2, homogeneous=False)
     self.table.set_border_width(10)
-    self.table.set_row_spacings(20)
-    self.table.set_col_spacings(10)
     self.table.attach(self.formats_frame, 0, 1, 0, 1)
     self.table.attach(self.different_options_frame, 1, 2, 0, 1)
     self.table.attach(self.button_hbox, 0, 2, 1, 2)
     self.table.show()
     # Создаем окно. Добавляем всё к окну и показываем его
-    self.window = Gtk.Window(Gtk.WindowType.TOPLEVEL)
+    self.window = Gtk.Window(type=Gtk.WindowType.TOPLEVEL)
     self.window.set_position(Gtk.WindowPosition.CENTER_ALWAYS)
     self.window.set_title('Настройки дополенения "Фото на документы"')
     self.window.set_border_width(5)
