@@ -593,7 +593,7 @@ class id_photo_base(object):
           self.category_cb.set_active(4)
 
         # Ширина фото
-        self.width_label = Gtk.Label('Ширина фото:')
+        self.width_label = Gtk.Label(label='Ширина фото:')
         self.width_label.set_justify(Gtk.Justification.LEFT)
         self.width_label.show()
         self.width_adj = Gtk.Adjustment(self.data['formats'][self.format_radio.index(format_id)]['width'], 0.0, 200.0, 1.0, 1.0, 0.0)
@@ -622,12 +622,12 @@ class id_photo_base(object):
         if self.data['formats'][self.format_radio.index(format_id)]['to_grayscale']:
           self.to_grayscale.set_active(True)
         # флажок "добавить рамку"
-        self.gray_frame = Gtk.CheckButton('добавить рамку')
+        self.gray_frame = Gtk.CheckButton(label='добавить рамку')
         self.gray_frame.show()
         if self.data['formats'][self.format_radio.index(format_id)]['gray_frame']:
           self.gray_frame.set_active(True)
         # флажок "добавить овал с растушёвкой"
-        self.oval = Gtk.CheckButton('добавить овал с растушёвкой')
+        self.oval = Gtk.CheckButton(label='добавить овал с растушёвкой')
         self.oval.show()
         if self.data['formats'][self.format_radio.index(format_id)]['oval']:
           self.oval.set_active(True)
@@ -687,23 +687,23 @@ class id_photo_base(object):
         self.width_hbox.pack_start(self.width_spin, False, False, 5)
         self.width_hbox.show()
         # Пакуем высоту в горизонтальный бокс
-        self.height_hbox = Gtk.HBox(False, 0)
+        self.height_hbox = Gtk.HBox(homogeneous=False, spacing=0)
         self.height_hbox.pack_start(self.height_label, True, True, 0)
         self.height_hbox.pack_start(self.height_spin, False, False, 5)
         self.height_hbox.show()
         # Пакуем над головой в горизонтальный бокс
-        self.overheadheight_hbox = Gtk.HBox(False, 0)
+        self.overheadheight_hbox = Gtk.HBox(homogeneous=False, spacing=0)
         self.overheadheight_hbox.pack_start(self.overheadheight_label, True, True, 0)
         self.overheadheight_hbox.pack_start(self.overheadheight_spin, False, False, 5)
         self.overheadheight_hbox.show()
         # Пакуем в вертикальный бокс горизонтальные боксы с виджетами
-        self.size_vbox = Gtk.VBox(True, 0)
+        self.size_vbox = Gtk.VBox(homogeneous=True, spacing=0)
         self.size_vbox.pack_start(self.width_hbox, True, True, 0)
         self.size_vbox.pack_start(self.height_hbox, True, True, 0)
         self.size_vbox.pack_start(self.overheadheight_hbox, True, True, 0)
         self.size_vbox.show()
 
-        self.onlyface1_radio = Gtk.RadioButton(None, 'от глаз до подбородка')
+        self.onlyface1_radio = Gtk.RadioButton.new_with_label(None, 'от глаз до подбородка')
         self.onlyface1_radio.show()
 
         self.onlyface2_radio = Gtk.RadioButton(self.onlyface1_radio, 'от макушки до подбородка')
@@ -720,7 +720,7 @@ class id_photo_base(object):
         self.faceheight_spin.show()
 
         # Пакуем в вертикальный бокс горизонтальные боксы с виджетами
-        self.faceheight_vbox = Gtk.VBox(True, 5)
+        self.faceheight_vbox = Gtk.VBox(homogeneous=True, spacing=5)
         self.faceheight_vbox.set_border_width(10)
         self.faceheight_vbox.pack_start(self.faceheight_spin, True, True, 0)
         self.faceheight_vbox.pack_start(self.onlyface1_radio, True, True, 0)
@@ -732,7 +732,7 @@ class id_photo_base(object):
     # Конец особая магия для "Лицевая чпасть головы" %-)
 
     # Инициируем таблицу, в которую поместим все виджеты
-    self.table = Gtk.Table(1, 2, False)
+    self.table = Gtk.Table(n_rows=1, n_columns=2, homogeneous=False)
     self.table.set_border_width(5)
     self.table.set_row_spacings(0)
     self.table.set_col_spacings(10)
@@ -903,7 +903,7 @@ class id_photo_base(object):
     self.category_cb.set_active(0)
     self.category_cb.show()
     # Ширина фото
-    self.width_label = Gtk.Label('Ширина фото:')
+    self.width_label = Gtk.Label(label='Ширина фото:')
     self.width_label.set_justify(Gtk.Justification.LEFT)
     self.width_label.show()
     self.width_adj = Gtk.Adjustment(0.0, 0.0, 200.0, 1.0, 1.0, 0.0)
@@ -930,10 +930,10 @@ class id_photo_base(object):
     self.to_grayscale = Gtk.CheckButton('обесцветить фото')
     self.to_grayscale.show()
     # флажок "добавить рамку"
-    self.gray_frame = Gtk.CheckButton('добавить рамку')
+    self.gray_frame = Gtk.CheckButton(label='добавить рамку')
     self.gray_frame.show()
     # флажок "добавить овал с растушёвкой"
-    self.oval = Gtk.CheckButton('добавить овал с растушёвкой')
+    self.oval = Gtk.CheckButton(label='добавить овал с растушёвкой')
     self.oval.show()
     # флажок "распечатать немедленно"
     self.print_photo = Gtk.CheckButton('распечатать автоматически')
@@ -975,23 +975,23 @@ class id_photo_base(object):
     self.width_hbox.pack_start(self.width_spin, False, False, 5)
     self.width_hbox.show()
     # Пакуем высоту в горизонтальный бокс
-    self.height_hbox = Gtk.HBox(False, 0)
+    self.height_hbox = Gtk.HBox(homogeneous=False, spacing=0)
     self.height_hbox.pack_start(self.height_label, True, True, 0)
     self.height_hbox.pack_start(self.height_spin, False, False, 5)
     self.height_hbox.show()
     # Пакуем над головой в горизонтальный бокс
-    self.overheadheight_hbox = Gtk.HBox(False, 0)
+    self.overheadheight_hbox = Gtk.HBox(homogeneous=False, spacing=0)
     self.overheadheight_hbox.pack_start(self.overheadheight_label, True, True, 0)
     self.overheadheight_hbox.pack_start(self.overheadheight_spin, False, False, 5)
     self.overheadheight_hbox.show()
     # Пакуем в вертикальный бокс горизонтальные боксы с виджетами
-    self.size_vbox = Gtk.VBox(True, 0)
+    self.size_vbox = Gtk.VBox(homogeneous=True, spacing=0)
     self.size_vbox.pack_start(self.width_hbox, True, True, 0)
     self.size_vbox.pack_start(self.height_hbox, True, True, 0)
     self.size_vbox.pack_start(self.overheadheight_hbox, True, True, 0)
     self.size_vbox.show()
     # Голова от кудова докудова?
-    self.onlyface1_radio = Gtk.RadioButton(None, 'от глаз до подбородка')
+    self.onlyface1_radio = Gtk.RadioButton.new(None, label='от глаз до подбородка')
     self.onlyface1_radio.show()
     self.onlyface2_radio = Gtk.RadioButton(self.onlyface1_radio, 'от макушки до подбородка')
     self.onlyface2_radio.show()
@@ -1001,7 +1001,7 @@ class id_photo_base(object):
     self.faceheight_spin.set_numeric(True)
     self.faceheight_spin.show()
     # Пакуем в вертикальный бокс горизонтальные боксы с виджетами
-    self.faceheight_vbox = Gtk.VBox(True, 5)
+    self.faceheight_vbox = Gtk.VBox(homogeneous=True, spacing=5)
     self.faceheight_vbox.set_border_width(10)
     self.faceheight_vbox.pack_start(self.faceheight_spin, True, True, 0)
     self.faceheight_vbox.pack_start(self.onlyface1_radio, True, True, 0)
@@ -1012,7 +1012,7 @@ class id_photo_base(object):
     self.faceheight_frame.show()
     # Конец особая магия для "Лицевая чпасть головы" %-)
     # Инициируем таблицу, в которую поместим все виджеты
-    self.table = Gtk.Table(1, 2, False)
+    self.table = Gtk.Table(n_rows=1, n_columns=2, homogeneous=False)
     self.table.set_border_width(5)
     self.table.set_row_spacings(0)
     self.table.set_col_spacings(10)
@@ -1183,7 +1183,7 @@ class id_photo_base(object):
     self.category_cb.set_active(0)
     self.category_cb.show()
     # Ширина фото
-    self.width_label = Gtk.Label('Ширина фото:')
+    self.width_label = Gtk.Label(label='Ширина фото:')
     self.width_label.set_justify(Gtk.Justification.LEFT)
     self.width_label.show()
     self.width_adj = Gtk.Adjustment(0.0, 0.0, 200.0, 1.0, 1.0, 0.0)
@@ -1210,10 +1210,10 @@ class id_photo_base(object):
     self.to_grayscale = Gtk.CheckButton('обесцветить фото')
     self.to_grayscale.show()
     # флажок "добавить рамку"
-    self.gray_frame = Gtk.CheckButton('добавить рамку')
+    self.gray_frame = Gtk.CheckButton(label='добавить рамку')
     self.gray_frame.show()
     # флажок "добавить овал с растушёвкой"
-    self.oval = Gtk.CheckButton('добавить овал с растушёвкой')
+    self.oval = Gtk.CheckButton(label='добавить овал с растушёвкой')
     self.oval.show()
     # флажок "распечатать немедленно"
     self.print_photo = Gtk.CheckButton('распечатать автоматически')
@@ -1255,17 +1255,17 @@ class id_photo_base(object):
     self.width_hbox.pack_start(self.width_spin, False, False, 5)
     self.width_hbox.show()
     # Пакуем высоту в горизонтальный бокс
-    self.height_hbox = Gtk.HBox(False, 0)
+    self.height_hbox = Gtk.HBox(homogeneous=False, spacing=0)
     self.height_hbox.pack_start(self.height_label, True, True, 0)
     self.height_hbox.pack_start(self.height_spin, False, False, 5)
     self.height_hbox.show()
     # Пакуем над головой в горизонтальный бокс
-    self.overheadheight_hbox = Gtk.HBox(False, 0)
+    self.overheadheight_hbox = Gtk.HBox(homogeneous=False, spacing=0)
     self.overheadheight_hbox.pack_start(self.overheadheight_label, True, True, 0)
     self.overheadheight_hbox.pack_start(self.overheadheight_spin, False, False, 5)
     self.overheadheight_hbox.show()
     # Пакуем в вертикальный бокс горизонтальные боксы с виджетами
-    self.size_vbox = Gtk.VBox(True, 0)
+    self.size_vbox = Gtk.VBox(homogeneous=True, spacing=0)
     self.size_vbox.pack_start(self.width_hbox, True, True, 0)
     self.size_vbox.pack_start(self.height_hbox, True, True, 0)
     self.size_vbox.pack_start(self.overheadheight_hbox, True, True, 0)
@@ -1281,7 +1281,7 @@ class id_photo_base(object):
     self.faceheight_spin.set_numeric(True)
     self.faceheight_spin.show()
     # Пакуем в вертикальный бокс горизонтальные боксы с виджетами
-    self.faceheight_vbox = Gtk.VBox(True, 5)
+    self.faceheight_vbox = Gtk.VBox(homogeneous=True, spacing=5)
     self.faceheight_vbox.set_border_width(10)
     self.faceheight_vbox.pack_start(self.faceheight_spin, True, True, 0)
     self.faceheight_vbox.pack_start(self.onlyface1_radio, True, True, 0)
@@ -1292,16 +1292,15 @@ class id_photo_base(object):
     self.faceheight_frame.show()
     # Конец особая магия для "Лицевая чпасть головы" %-)
     # Инициируем таблицу, в которую поместим все виджеты
-    self.table = Gtk.Table(1, 2, False)
+    self.table = Gtk.Table(n_rows=1, n_columns=2, homogeneous=False)
     self.table.set_border_width(5)
-    self.table.set_row_spacings(0)
-    self.table.set_col_spacings(10)
     self.table.attach(self.size_vbox, 0, 1, 0, 1)
     self.table.attach(self.faceheight_frame, 1, 2, 0, 1)
     self.table.show()
 
     # Инициируем диалог, на котором будут все наши виджеты находиться
-    dialog = Gtk.Dialog('Добавить новый формат', self.window, Gtk.DialogFlags.MODAL | Gtk.DialogFlags.DESTROY_WITH_PARENT, (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_ADD, Gtk.ResponseType.OK))
+    dialog = Gtk.Dialog('Добавить новый формат', self.window, modal=True, destroy_with_parent=True)
+    dialog.add_buttons(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_ADD, Gtk.ResponseType.OK)
     dialog.set_position(Gtk.WindowPosition.CENTER_ALWAYS)
     dialog.set_resizable(False)
     dialog.set_border_width(10)
