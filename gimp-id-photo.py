@@ -1634,7 +1634,7 @@ class settings(id_photo_base):
     self.sc_win = Gtk.ScrolledWindow(None, None)
     self.sc_win.set_border_width(0)
     self.sc_win.set_size_request(270,200)
-    self.sc_win.set_policy(Gtk.POLICY_AUTOMATIC, Gtk.POLICY_AUTOMATIC)
+    self.sc_win.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
     self.sc_win.add_with_viewport(self.formats_vbox)
     self.sc_win.show()
     # Создаем кнопку "Добавить"
@@ -1672,17 +1672,17 @@ class settings(id_photo_base):
     self.formats_table.set_border_width(10)
     self.formats_table.set_row_spacings(10)
     self.formats_table.set_col_spacings(10)
-    self.formats_table.attach(self.sc_win, 0, 1, 0, 1, Gtk.FILL|Gtk.EXPAND, Gtk.FILL|Gtk.EXPAND, 0, 0)
-    self.formats_table.attach(self.add_success_label, 0, 1, 1, 2, Gtk.FILL|Gtk.SHRINK, Gtk.FILL|Gtk.SHRINK, 0, 0)
-    self.formats_table.attach(self.button_format_hbox, 0, 1, 2, 3, Gtk.FILL|Gtk.SHRINK, Gtk.FILL|Gtk.SHRINK, 0, 0)
+    self.formats_table.attach(self.sc_win, 0, 1, 0, 1, Gtk.AttachOptions.FILL | Gtk.AttachOptions.EXPAND, Gtk.AttachOptions.FILL | Gtk.AttachOptions.EXPAND, 0, 0)
+    self.formats_table.attach(self.add_success_label, 0, 1, 1, 2, Gtk.AttachOptions.FILL | Gtk.AttachOptions.SHRINK, Gtk.AttachOptions.FILL | Gtk.AttachOptions.SHRINK, 0, 0)
+    self.formats_table.attach(self.button_format_hbox, 0, 1, 2, 3, Gtk.AttachOptions.FILL | Gtk.AttachOptions.SHRINK, Gtk.AttachOptions.FILL | Gtk.AttachOptions.SHRINK, 0, 0)
     self.formats_table.show()
     # Фрейм 'Операции с форматами'
-    self.formats_frame = Gtk.Frame('Операции с форматами')
+    self.formats_frame = Gtk.Frame(label='Операции с форматами')
     self.formats_frame.add(self.formats_table)
     self.formats_frame.show()
     # Создаём поясняющую метку "Использовать разрешение:"
     self.use_resolution_label = Gtk.Label(None)
-    self.use_resolution_label.set('Использовать разрешение: ');
+    self.use_resolution_label.set_text('Использовать разрешение: ')
     self.use_resolution_label.show()
     # Выпадающий сисок "Разрешение"
     self.resolution_cb = Gtk.ComboBoxText()
@@ -1696,7 +1696,7 @@ class settings(id_photo_base):
     self.resolution_cb.show()
     # Создаём поясняющую метку "ppi"
     self.ppi_label = Gtk.Label(None)
-    self.ppi_label.set('ppi');
+    self.ppi_label.set_text('ppi');
     self.ppi_label.show()
     # Делаем активным пункт выподающего списка разрешений
     if self.data['properties']['resolution'] == 300:
@@ -1733,11 +1733,11 @@ class settings(id_photo_base):
     self.success_label.set_justify(Gtk.Justification.LEFT)
     #self.success_label.show()
     # Создаём текстовое поле для рекламного текста
-    self.text = Gtk.TextView(None)
+    self.text = Gtk.TextView()
     self.text.set_size_request(260,100)
     self.text.set_editable(True)
     self.text.set_cursor_visible(True)
-    self.text.set_wrap_mode(Gtk.WRAP_CHAR)
+    self.text.set_wrap_mode(Gtk.WrapMode.CHAR)
     self.text.set_justification(Gtk.Justification.LEFT)
     self.text.set_indent(0) # Абзацный отступ
     self.text.set_left_margin(5) # Отступ слева
@@ -1756,7 +1756,7 @@ class settings(id_photo_base):
     self.different_options_vbox.pack_start(self.text, True, True, 0)
     self.different_options_vbox.show()
     # Фрейм для иных
-    self.different_options_frame = Gtk.Frame('Различные опции')
+    self.different_options_frame = Gtk.Frame(label='Различные опции')
     self.different_options_frame.set_border_width(0)
     self.different_options_frame.add(self.different_options_vbox)
     self.different_options_frame.show()
