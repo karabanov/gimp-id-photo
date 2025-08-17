@@ -597,7 +597,7 @@ class id_photo_base(object):
         self.width_label.set_justify(Gtk.Justification.LEFT)
         self.width_label.show()
         self.width_adj = Gtk.Adjustment(self.data['formats'][self.format_radio.index(format_id)]['width'], 0.0, 200.0, 1.0, 1.0, 0.0)
-        self.width_spin = Gtk.SpinButton(self.width_adj, 0, 0)
+        self.width_spin = Gtk.SpinButton(adjustment=self.width_adj, climb_rate=0, digits=0)
         self.width_spin.set_numeric(True)
         self.width_spin.show()
         # Высота фото
@@ -605,7 +605,7 @@ class id_photo_base(object):
         self.height_label.set_justify(Gtk.Justification.LEFT)
         self.height_label.show()
         self.height_adj = Gtk.Adjustment(self.data['formats'][self.format_radio.index(format_id)]['height'], 0.0, 200.0, 1.0, 1.0, 0.0)
-        self.height_spin = Gtk.SpinButton(self.height_adj, 0, 0)
+        self.height_spin = Gtk.SpinButton(adjustment=self.height_adj, climb_rate=0, digits=0)
         self.height_spin.set_numeric(True)
         self.height_spin.show()
         # До головы
@@ -613,7 +613,7 @@ class id_photo_base(object):
         self.overheadheight_label.set_justify(Gtk.Justification.LEFT)
         self.overheadheight_label.show()
         self.overheadheight_adj = Gtk.Adjustment(self.data['formats'][self.format_radio.index(format_id)]['overheadheight'], 0.0, 200.0, 1.0, 1.0, 0.0)
-        self.overheadheight_spin = Gtk.SpinButton(self.overheadheight_adj, 0, 0)
+        self.overheadheight_spin = Gtk.SpinButton(adjustment=self.overheadheight_adj, climb_rate=0, digits=0)
         self.overheadheight_spin.set_numeric(True)
         self.overheadheight_spin.show()
         # флажок "обесцветить фото"
@@ -670,7 +670,7 @@ class id_photo_base(object):
           self.paper_cb.set_active(3)
         # Количество фоток
         self.copys_adj = Gtk.Adjustment(self.data['formats'][self.format_radio.index(format_id)]['copys'], 1.0, 200.0, 1.0, 1.0, 0.0)
-        self.copys_spin = Gtk.SpinButton(self.copys_adj, 0, 0)
+        self.copys_spin = Gtk.SpinButton(adjustment=self.copys_adj, climb_rate=0, digits=0)
         self.copys_spin.set_numeric(True)
         self.copys_spin.show()
         self.copys_label = Gtk.Label('фото на листе')
@@ -715,7 +715,7 @@ class id_photo_base(object):
           self.onlyface2_radio.set_active(True)
 
         self.faceheight_adj = Gtk.Adjustment(self.data['formats'][self.format_radio.index(format_id)]['faceheight'], 0.0, 200.0, 1.0, 1.0, 0.0)
-        self.faceheight_spin = Gtk.SpinButton(self.faceheight_adj, 0, 0)
+        self.faceheight_spin = Gtk.SpinButton(adjustment=self.faceheight_adj, climb_rate=0, digits=0)
         self.faceheight_spin.set_numeric(True)
         self.faceheight_spin.show()
 
@@ -726,7 +726,7 @@ class id_photo_base(object):
         self.faceheight_vbox.pack_start(self.onlyface1_radio, True, True, 0)
         self.faceheight_vbox.pack_start(self.onlyface2_radio, True, True, 0)
         self.faceheight_vbox.show()
-    self.faceheight_frame = Gtk.Frame('Размер лицевой части головы')
+    self.faceheight_frame = Gtk.Frame(label='Размер лицевой части головы')
     self.faceheight_frame.add(self.faceheight_vbox)
     self.faceheight_frame.show()
     # Конец особая магия для "Лицевая чпасть головы" %-)
@@ -907,7 +907,7 @@ class id_photo_base(object):
     self.width_label.set_justify(Gtk.Justification.LEFT)
     self.width_label.show()
     self.width_adj = Gtk.Adjustment(0.0, 0.0, 200.0, 1.0, 1.0, 0.0)
-    self.width_spin = Gtk.SpinButton(self.width_adj, 0, 0)
+    self.width_spin = Gtk.SpinButton(adjustment=self.width_adj, climb_rate=0, digits=0)
     self.width_spin.set_numeric(True)
     self.width_spin.show()
     # Высота фото
@@ -915,7 +915,7 @@ class id_photo_base(object):
     self.height_label.set_justify(Gtk.Justification.LEFT)
     self.height_label.show()
     self.height_adj = Gtk.Adjustment(0.0, 0.0, 200.0, 1.0, 1.0, 0.0)
-    self.height_spin = Gtk.SpinButton(self.height_adj, 0, 0)
+    self.height_spin = Gtk.SpinButton(adjustment=self.height_adj, climb_rate=0, digits=0)
     self.height_spin.set_numeric(True)
     self.height_spin.show()
     # До головы
@@ -923,7 +923,7 @@ class id_photo_base(object):
     self.overheadheight_label.set_justify(Gtk.Justification.LEFT)
     self.overheadheight_label.show()
     self.overheadheight_adj = Gtk.Adjustment(0.0, 0.0, 200.0, 1.0, 1.0, 0.0)
-    self.overheadheight_spin = Gtk.SpinButton(self.overheadheight_adj, 0, 0)
+    self.overheadheight_spin = Gtk.SpinButton(adjustment=self.overheadheight_adj, climb_rate=0, digits=0)
     self.overheadheight_spin.set_numeric(True)
     self.overheadheight_spin.show()
     # флажок "обесцветить фото"
@@ -958,7 +958,7 @@ class id_photo_base(object):
     self.paper_cb.show()
     # Количество фоток
     self.copys_adj = Gtk.Adjustment(4.0, 1.0, 200.0, 1.0, 1.0, 0.0)
-    self.copys_spin = Gtk.SpinButton(self.copys_adj, 0, 0)
+    self.copys_spin = Gtk.SpinButton(adjustment=self.copys_adj, climb_rate=0, digits=0)
     self.copys_spin.set_numeric(True)
     self.copys_spin.show()
     self.copys_label = Gtk.Label('фото на листе')
@@ -997,7 +997,7 @@ class id_photo_base(object):
     self.onlyface2_radio.show()
     # И Указываем откудова докудова
     self.faceheight_adj = Gtk.Adjustment(0.0, 0.0, 200.0, 1.0, 1.0, 0.0)
-    self.faceheight_spin = Gtk.SpinButton(self.faceheight_adj, 0, 0)
+    self.faceheight_spin = Gtk.SpinButton(adjustment=self.faceheight_adj, climb_rate=0, digits=0)
     self.faceheight_spin.set_numeric(True)
     self.faceheight_spin.show()
     # Пакуем в вертикальный бокс горизонтальные боксы с виджетами
@@ -1007,7 +1007,7 @@ class id_photo_base(object):
     self.faceheight_vbox.pack_start(self.onlyface1_radio, True, True, 0)
     self.faceheight_vbox.pack_start(self.onlyface2_radio, True, True, 0)
     self.faceheight_vbox.show()
-    self.faceheight_frame = Gtk.Frame('Размер лицевой части головы')
+    self.faceheight_frame = Gtk.Frame(label='Размер лицевой части головы')
     self.faceheight_frame.add(self.faceheight_vbox)
     self.faceheight_frame.show()
     # Конец особая магия для "Лицевая чпасть головы" %-)
@@ -1187,7 +1187,7 @@ class id_photo_base(object):
     self.width_label.set_justify(Gtk.Justification.LEFT)
     self.width_label.show()
     self.width_adj = Gtk.Adjustment(0.0, 0.0, 200.0, 1.0, 1.0, 0.0)
-    self.width_spin = Gtk.SpinButton(self.width_adj, 0, 0)
+    self.width_spin = Gtk.SpinButton(adjustment=self.width_adj, climb_rate=0, digits=0)
     self.width_spin.set_numeric(True)
     self.width_spin.show()
     # Высота фото
@@ -1195,7 +1195,7 @@ class id_photo_base(object):
     self.height_label.set_justify(Gtk.Justification.LEFT)
     self.height_label.show()
     self.height_adj = Gtk.Adjustment(0.0, 0.0, 200.0, 1.0, 1.0, 0.0)
-    self.height_spin = Gtk.SpinButton(self.height_adj, 0, 0)
+    self.height_spin = Gtk.SpinButton(adjustment=self.height_adj, climb_rate=0, digits=0)
     self.height_spin.set_numeric(True)
     self.height_spin.show()
     # До головы
@@ -1203,7 +1203,7 @@ class id_photo_base(object):
     self.overheadheight_label.set_justify(Gtk.Justification.LEFT)
     self.overheadheight_label.show()
     self.overheadheight_adj = Gtk.Adjustment(0.0, 0.0, 200.0, 1.0, 1.0, 0.0)
-    self.overheadheight_spin = Gtk.SpinButton(self.overheadheight_adj, 0, 0)
+    self.overheadheight_spin = Gtk.SpinButton(adjustment=self.overheadheight_adj, climb_rate=0, digits=0)
     self.overheadheight_spin.set_numeric(True)
     self.overheadheight_spin.show()
     # флажок "обесцветить фото"
@@ -1238,7 +1238,7 @@ class id_photo_base(object):
     self.paper_cb.show()
     # Количество фоток
     self.copys_adj = Gtk.Adjustment(4.0, 1.0, 200.0, 1.0, 1.0, 0.0)
-    self.copys_spin = Gtk.SpinButton(self.copys_adj, 0, 0)
+    self.copys_spin = Gtk.SpinButton(adjustment=self.copys_adj, climb_rate=0, digits=0)
     self.copys_spin.set_numeric(True)
     self.copys_spin.show()
     self.copys_label = Gtk.Label('фото на листе')
@@ -1277,7 +1277,7 @@ class id_photo_base(object):
     self.onlyface2_radio.show()
     # И Указываем откудова докудова
     self.faceheight_adj = Gtk.Adjustment(0.0, 0.0, 200.0, 1.0, 1.0, 0.0)
-    self.faceheight_spin = Gtk.SpinButton(self.faceheight_adj, 0, 0)
+    self.faceheight_spin = Gtk.SpinButton(adjustment=self.faceheight_adj, climb_rate=0, digits=0)
     self.faceheight_spin.set_numeric(True)
     self.faceheight_spin.show()
     # Пакуем в вертикальный бокс горизонтальные боксы с виджетами
@@ -1287,7 +1287,7 @@ class id_photo_base(object):
     self.faceheight_vbox.pack_start(self.onlyface1_radio, True, True, 0)
     self.faceheight_vbox.pack_start(self.onlyface2_radio, True, True, 0)
     self.faceheight_vbox.show()
-    self.faceheight_frame = Gtk.Frame('Размер лицевой части головы')
+    self.faceheight_frame = Gtk.Frame(label='Размер лицевой части головы')
     self.faceheight_frame.add(self.faceheight_vbox)
     self.faceheight_frame.show()
     # Конец особая магия для "Лицевая чпасть головы" %-)
